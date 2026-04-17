@@ -1,4 +1,5 @@
 import json
+import math
 
 def loadBuildings():
     with open("Buildings_ERE.JSON") as f:
@@ -63,7 +64,20 @@ def evaluateSettlement(settlementType, buildingIds, fertility):
                 totals[key] += effects.get(key, 0)
     return totals
 
-#print("Wealth? ",  evaluateSettlement("metropolis", [2, 9, 11, 15, 20], 3))
+def checkConstraint(regionData):
+    violations = []
+    sanitation = regionData["sanitation"]
+    j = 0
+    if regionData["food"] < 0:
+        violations.append("Regional food deficit")
+    if regionData["happiness"] < 13:
+        violations.append("Regional happiness too low")
+    for i in sanitation:
+        j += 1
+        if i < 0:
+            #1 = city, 2 & 3 = towns
+            violations.append(f"Settlement {j} sanitation deficit")
+    return violations
 
 def evaluate(region):
 
@@ -73,7 +87,7 @@ def evaluate(region):
         evaluateSettlement(s["type"], s["buildings"], fertility)
         for s in region["settlements"]
     ]
-    
+    #local sanitation
     locSan = []
     regionalSan = sum(s["sanitation_regional"] for s in regionStats)
     for s in regionStats:
@@ -85,18 +99,18 @@ def evaluate(region):
     regWealth = {}
     regModifiers = {}
     totalTradeWealth = sum(s["trade_value"] for s in regionStats)
-
-    totalTradeWealth = totalTradeWealth * (1 + regModifiers.get("tariff_wealth", 0))
-        
+    #Get wealth and modifiers
     for s in regionStats:
         for cat, val in s["wealth"].items():
             regWealth[cat] = regWealth.get(cat, 0) + val
         for mod, val in s["modifiers"].items():
             regModifiers[mod] = regModifiers.get(mod, 0) + val
+        #Get other relevant data
         regFood += s["food"]
         regHappy += s["happiness"]
         regReligion = regModifiers.get("religion", 0)
 
+    #Apply wealth modifiers if applicable
     for mod, val in regModifiers.items():
         match mod:
             case "co_w":
@@ -111,6 +125,14 @@ def evaluate(region):
                 regWealth["co"] = regWealth.get("co", 0) * (1 + val)
     totalWealth = sum(regWealth.get(cat, 0) for cat in ["co", "in", "ag", "ah", "cu", "flat"])
 
+    constraintData = {
+        "food": regFood,
+        "happiness": regHappy,
+        "sanitation": locSan
+    }
+    violations = checkConstraint(constraintData)
+    print(violations)
+    
     return {
         "settlement_sanitation": locSan,
         "region": {
