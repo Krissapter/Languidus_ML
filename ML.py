@@ -38,14 +38,10 @@ def evalExpression(expr, fertility):
     return eval(expr, {"fertility": fertility})
 #Defines the base values of each settlement
 BASE_STATS = {
-    #Cities
-    "metropolis": {"food": -140, "happiness": 5, "sanitation": -4, "wealth": 600},
-    "civitas": {"food": -30, "happiness": 2, "sanitation": -1, "wealth": 300},
-    #Towns
+    "city": {"food": -140, "happiness": 5, "sanitation": -4, "wealth": 600},
     "town": {"food": -80, "happiness": 3, "sanitation": -2, "wealth": 300},
-    "colonia": {"food": -20, "happiness": 1, "sanitation": 0, "wealth": 200}
 }
-#Evaluates the settlement as a sum of the building effects + innate effects
+#Compiles the settlement as a sum of the building effects + innate effects
 def evaluateSettlement(settlementType, buildingIds, fertility):
     base = BASE_STATS[settlementType]
     totals = {
@@ -67,7 +63,7 @@ def evaluateSettlement(settlementType, buildingIds, fertility):
                 totals[key] += effects.get(key, 0)
     return totals
 
-print("Wealth? ",  evaluateSettlement("metropolis", [2, 9, 11, 15, 20], 3))
+#print("Wealth? ",  evaluateSettlement("metropolis", [2, 9, 11, 15, 20], 3))
 
 def evaluate(region):
 
@@ -77,16 +73,63 @@ def evaluate(region):
         evaluateSettlement(s["type"], s["buildings"], fertility)
         for s in region["settlements"]
     ]
+    
+    locSan = []
+    regionalSan = sum(s["sanitation_regional"] for s in regionStats)
+    for s in regionStats:
+        locSan.append(s["sanitation"] + regionalSan) 
 
-    wealth = {"co": 0, "in": 0, "ag": 0, "ah": 0, "cu": 0, "other": 0}
-    regional_sanitation = 0
-    modifiers = {"co_w": 0, "in_w": 0, "ag_w": 0, "ah_w": 0, "cu_w": 0}
+    regFood = 0
+    regHappy = 0
+    regReligion = 0
+    regWealth = {}
+    regModifiers = {}
+    totalTradeWealth = sum(s["trade_value"] for s in regionStats)
+
+    totalTradeWealth = totalTradeWealth * (1 + regModifiers.get("tariff_wealth", 0))
+        
+    for s in regionStats:
+        for cat, val in s["wealth"].items():
+            regWealth[cat] = regWealth.get(cat, 0) + val
+        for mod, val in s["modifiers"].items():
+            regModifiers[mod] = regModifiers.get(mod, 0) + val
+        regFood += s["food"]
+        regHappy += s["happiness"]
+        regReligion = regModifiers.get("religion", 0)
+
+    for mod, val in regModifiers.items():
+        match mod:
+            case "co_w":
+                regWealth["co"] = regWealth.get("co", 0) * (1 + val)
+            case "in_w":
+                regWealth["co"] = regWealth.get("co", 0) * (1 + val)
+            case "ag_w":
+                regWealth["co"] = regWealth.get("co", 0) * (1 + val)
+            case "ah_w":
+                regWealth["co"] = regWealth.get("co", 0) * (1 + val)
+            case "cu_w":
+                regWealth["co"] = regWealth.get("co", 0) * (1 + val)
+    totalWealth = sum(regWealth.get(cat, 0) for cat in ["co", "in", "ag", "ah", "cu", "flat"])
+
+    return {
+        "settlement_sanitation": locSan,
+        "region": {
+            "food": regFood,
+            "happiness": regHappy,
+            "wealth": totalWealth,
+            "modifiers": regModifiers,
+            "trade_value": totalTradeWealth,
+            "religion": regReligion
+        }
+    }
 
 region = {
     "fertility": 2,
     "settlements": [
-        {"type": "metropolis", "buildings": [2, 9, 11, 15, 20]},
+        {"type": "city", "buildings": [2, 9, 11, 15, 20]},
         {"type": "town", "buildings": [33, 34, 36]},
         {"type": "town", "buildings": [35, 39, 40]}
     ]
 }
+
+print(evaluate(region))

@@ -521,8 +521,7 @@
         "wealth": { "ah": "650 + 200 * fertility" },
         "happiness": -5,
         "sanitation": -5
-      },
-      "modifiers": { "cavalry_quality": "improved_region" }
+      }
     },
     {
       "id": 36,
