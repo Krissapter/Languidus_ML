@@ -89,9 +89,10 @@ def scoreRegion(data, violations):
 
     food = data["food"]
     happy = data["happiness"]
-    wealth = int(data["wealth"])
+    wealth = data["wealth"]
+    synergy = 0
 
-    fScore = int(200*math.sqrt(max(0, food)))
+    fScore = round(200*math.sqrt(max(0, food)))
 
     if happy > 13 and happy <= 18:
         hScore = happy*50
@@ -100,22 +101,19 @@ def scoreRegion(data, violations):
     else:
         hScore = 0
     
+    print(data["base_wealth"], "\n", data["modifiers"])
+    
+    WEALTH_MODIFIERS = {"co_w": "co", "in_w": "in", "ag_w": "ag", "ah_w": "ah", "cu_w": "cu"}
+
     for mod, val in data["modifiers"].items():
-        match mod:
-            case "co_w":
-                data["base_wealth"]["co"] = data["base_wealth"].get("co", 0)*val
-            case "in_w":
-                data["base_wealth"]["in"] = data["base_wealth"].get("in", 0)*val
-            case "ag_w":
-                data["base_wealth"]["ag"] = data["base_wealth"].get("ag", 0)*val
-            case "ah_w":
-                data["base_wealth"]["ah"] = data["base_wealth"].get("ah", 0)*val
-            case "cu_w":
-                data["base_wealth"]["cu"] = data["base_wealth"].get("cu", 0)*val
+        if mod in WEALTH_MODIFIERS:
+            cat = WEALTH_MODIFIERS[mod]
+            base = data["base_wealth"].get(cat, 0)
+            synergy += round(base*val if val >= 0.3 else (base*val)/2)
+
     penalty = len(violations)*10000
 
-    print(fScore, hScore, wealth, "\n")
-    score = wealth + fScore + hScore - penalty
+    score = wealth + fScore + hScore + synergy - penalty
     return score
 
 def evaluate(region):
@@ -148,21 +146,22 @@ def evaluate(region):
         regFood += s["food"]
         regHappy += s["happiness"]
         regReligion = regModifiers.get("religion", 0)
-        baseWealth = regWealth
-
+    
+    baseWealth = regWealth.copy()
+    print(baseWealth)
     #Apply wealth modifiers if applicable
     for mod, val in regModifiers.items():
         match mod:
             case "co_w":
-                regWealth["co"] = regWealth.get("co", 0)*(1 + val)
+                regWealth["co"] = round(regWealth.get("co", 0)*(1 + val))
             case "in_w":
-                regWealth["in"] = regWealth.get("in", 0)*(1 + val)
+                regWealth["in"] = round(regWealth.get("in", 0)*(1 + val))
             case "ag_w":
-                regWealth["ag"] = regWealth.get("ag", 0)*(1 + val)
+                regWealth["ag"] = round(regWealth.get("ag", 0)*(1 + val))
             case "ah_w":
-                regWealth["ah"] = regWealth.get("ah", 0)*(1 + val)
+                regWealth["ah"] = round(regWealth.get("ah", 0)*(1 + val))
             case "cu_w":
-                regWealth["cu"] = regWealth.get("cu", 0)*(1 + val)
+                regWealth["cu"] = round(regWealth.get("cu", 0)*(1 + val))
     totalWealth = sum(regWealth.get(cat, 0) for cat in ["co", "in", "ag", "ah", "cu", "flat"])
 
     constraintData = {
@@ -193,12 +192,12 @@ def evaluate(region):
     }
 
 region = {
-    "fertility": 2,
+    "fertility": 3,
     "settlements": [
-        {"type": "city", "buildings": [2, 9, 11, 15, 20]},
-        {"type": "town", "buildings": [33, 34, 36]},
-        {"type": "town", "buildings": [35, 39, 40]}
+        {"type": "city", "buildings": [11, 2, 8, 4, 5]},
+        {"type": "town", "buildings": [33, 34, 35]},
+        {"type": "town", "buildings": [36, 38, 33]}
     ]
 }
 
-print(evaluate(region))
+evaluate(region)
