@@ -56,12 +56,12 @@ def getBuilding(bid, resource=None):
     
 
 #Compiles the settlement as a sum of the building effects + innate effects
-def evaluateSettlement(settlementType, buildingIds, fertility, resource):
-    base = BASE_STATS[settlementType]
+def evaluateSettlement(buildingIds, fertility, resource):
+    
     totals = {
-        "food": base["food"],
-        "happiness": base["happiness"],
-        "sanitation": base["sanitation"],
+        "food": 0,
+        "happiness": 0,
+        "sanitation": 0,
         "sanitation_regional": 0,
         "wealth": {},
         "modifiers": {},
@@ -136,20 +136,20 @@ def scoreRegion(data, violations):
 
 def evaluate(region):
 
-    fertility = region.get("fertility", 0)
+    fertility = region.get("fertility", 0)  
 
     regionStats = [
-        evaluateSettlement(s["type"], s["buildings"], fertility, s.get("resource", 0))
+        evaluateSettlement(s["buildings"], fertility, s.get("resource", 0))
         for s in region["settlements"]
     ]
     #local sanitation
-    locSan = []
+    locSan = [BASE_STATS["city"]["sanitation"], BASE_STATS["town"]["sanitation"], BASE_STATS["town"]["sanitation"]]
     regionalSan = sum(s["sanitation_regional"] for s in regionStats)
-    for s in regionStats:
-        locSan.append(s["sanitation"] + regionalSan) 
+    for i, s in enumerate(regionStats):
+        locSan[i] += (s["sanitation"] + regionalSan)
 
-    regFood = 0
-    regHappy = 0
+    regFood = BASE_STATS["city"]["food"] + BASE_STATS["town"]["food"] + BASE_STATS["town"]["food"]
+    regHappy = BASE_STATS["city"]["happiness"] + BASE_STATS["town"]["happiness"] + BASE_STATS["town"]["happiness"]
     regReligion = 0
     regWealth = {}
     regModifiers = {}
@@ -164,7 +164,7 @@ def evaluate(region):
         regFood += s["food"]
         regHappy += s["happiness"]
         regReligion = regModifiers.get("religion", 0)
-    
+
     baseWealth = regWealth.copy()
     #Apply wealth modifiers if applicable
     for mod, val in regModifiers.items():
