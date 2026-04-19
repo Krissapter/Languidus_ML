@@ -75,14 +75,13 @@ def checkConstraint(regionData):
     sanitation = regionData["sanitation"]
     j = 0
     if regionData["food"] < 0:
-        violations.append("Regional food deficit")
+        violations.append(regionData["food"]*-1)
     if regionData["happiness"] < 13:
-        violations.append("Regional happiness too low")
+        violations.append(13-regionData["happiness"])
     for i in sanitation:
         j += 1
         if i < 0:
-            #1 = city, 2 & 3 = towns
-            violations.append(f"Settlement {j} sanitation deficit")
+            violations.append(i)
     return violations
 
 def scoreRegion(data, violations):
@@ -92,7 +91,7 @@ def scoreRegion(data, violations):
     religionParam = 100
     relAdjParam = 50
     synParam = 2
-    TKPenalityParam = 100000
+    TKPenalityParam = 10000
 
     food = data["food"]
     happy = data["happiness"]
@@ -119,7 +118,7 @@ def scoreRegion(data, violations):
             base = data["base_wealth"].get(cat, 0)
             synergy += round(base*val if val >= 0.3 else (base*val)/synParam)
 
-    penalty = len(violations)*TKPenalityParam
+    penalty = sum(violations)*TKPenalityParam
 
     score = wScore + fScore + hScore + synergy + rScore + tScore- penalty
     return score
@@ -183,7 +182,8 @@ def evaluate(region):
         "happiness": regHappy,
         "wealth": totalWealth,
         "base_wealth": baseWealth,
-        "modifiers": regModifiers
+        "modifiers": regModifiers,
+        "religion": regReligion
     }
     print(scoreRegion(regionData, violations))
     
