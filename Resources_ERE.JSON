@@ -1,0 +1,18 @@
+{
+  "resources": [
+    { "id": 0,  "resource": "none"   },
+    { "id": 1,  "resource": "gold"   },
+    { "id": 2,  "resource": "dyes"   },
+    { "id": 3,  "resource": "iron"   },
+    { "id": 4,  "resource": "grapes" },
+    { "id": 5,  "resource": "furs"   },
+    { "id": 6,  "resource": "gems"   },
+    { "id": 7,  "resource": "lead"   },
+    { "id": 8,  "resource": "timber" },
+    { "id": 9,  "resource": "olives" },
+    { "id": 10, "resource": "marble" },
+    { "id": 11, "resource": "salt"   },
+    { "id": 12, "resource": "silk"   },
+    { "id": 13, "resource": "spice"  }
+  ]
+}
