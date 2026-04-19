@@ -86,34 +86,42 @@ def checkConstraint(regionData):
     return violations
 
 def scoreRegion(data, violations):
+    #Hyperparameters
+    foodParam = 200
+    happyParam = 50
+    religionParam = 100
+    relAdjParam = 50
+    synParam = 2
+    TKPenalityParam = 100000
 
     food = data["food"]
     happy = data["happiness"]
-    wealth = data["wealth"]
+    wScore = data["wealth"]
+    tScore = data["trade_value"]
     synergy = 0
 
-    fScore = round(200*math.sqrt(max(0, food)))
+    fScore = round(foodParam*math.sqrt(max(0, food)))
 
     if happy > 13 and happy <= 18:
-        hScore = happy*50
+        hScore = happy*happyParam
     elif happy > 18:
-        hScore = 18*50 - (happy-18)*50
+        hScore = 18*happyParam - (happy-18)*happyParam
     else:
         hScore = 0
     
-    print(data["base_wealth"], "\n", data["modifiers"])
+    rScore = data["modifiers"].get("religion", 0)*religionParam + data["modifiers"].get("religion_adjacent", 0)*relAdjParam
     
     WEALTH_MODIFIERS = {"co_w": "co", "in_w": "in", "ag_w": "ag", "ah_w": "ah", "cu_w": "cu"}
-
+    #Test with and without synergy encouragement
     for mod, val in data["modifiers"].items():
         if mod in WEALTH_MODIFIERS:
             cat = WEALTH_MODIFIERS[mod]
             base = data["base_wealth"].get(cat, 0)
-            synergy += round(base*val if val >= 0.3 else (base*val)/2)
+            synergy += round(base*val if val >= 0.3 else (base*val)/synParam)
 
-    penalty = len(violations)*10000
+    penalty = len(violations)*TKPenalityParam
 
-    score = wealth + fScore + hScore + synergy - penalty
+    score = wScore + fScore + hScore + synergy + rScore + tScore- penalty
     return score
 
 def evaluate(region):
