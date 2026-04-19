@@ -1,6 +1,12 @@
 import json
 import math
 
+#Defines the base values of each settlement
+BASE_STATS = {
+    "city": {"food": -140, "happiness": 5, "sanitation": -4, "wealth": 600},
+    "town": {"food": -80, "happiness": 3, "sanitation": -2, "wealth": 300},
+}
+
 def loadBuildings():
     with open("Buildings_ERE.JSON") as f:
         data = json.load(f)
@@ -40,14 +46,17 @@ def evalExpression(expr, fertility):
         return expr
     return eval(expr, {"fertility": fertility})
 
-#Defines the base values of each settlement
-BASE_STATS = {
-    "city": {"food": -140, "happiness": 5, "sanitation": -4, "wealth": 600},
-    "town": {"food": -80, "happiness": 3, "sanitation": -2, "wealth": 300},
-}
+def getBuilding(bid, resource=None):
+    for b in buildingList:
+        if b["id"] == bid:
+            reqs= b.get("requires", [])
+            if not reqs or resource in reqs:
+                return b
+    return buildingList[0]
+    
 
 #Compiles the settlement as a sum of the building effects + innate effects
-def evaluateSettlement(settlementType, buildingIds, fertility):
+def evaluateSettlement(settlementType, buildingIds, fertility, resource):
     base = BASE_STATS[settlementType]
     totals = {
         "food": base["food"],
@@ -60,7 +69,7 @@ def evaluateSettlement(settlementType, buildingIds, fertility):
     }
     #Add stuff together and put it in the dict
     for bid in buildingIds:
-        effects = getBuildingEffects(buildingList[bid], fertility)
+        effects = getBuildingEffects(getBuilding(bid, resource), fertility)
         for key in totals:
             if key == "wealth" or key == "modifiers":
                 for cat, val in effects[key].items():
@@ -84,6 +93,7 @@ def checkConstraint(regionData):
             violations.append(i)
     return violations
 
+#Scores the region based on the data collected
 def scoreRegion(data, violations):
     #Hyperparameters
     foodParam = 200
@@ -129,7 +139,7 @@ def evaluate(region):
     fertility = region.get("fertility", 0)
 
     regionStats = [
-        evaluateSettlement(s["type"], s["buildings"], fertility)
+        evaluateSettlement(s["type"], s["buildings"], fertility, s.get("resource", 0))
         for s in region["settlements"]
     ]
     #local sanitation
@@ -203,9 +213,9 @@ def evaluate(region):
 region = {
     "fertility": 3,
     "settlements": [
-        {"type": "city", "buildings": [11, 2, 8, 4, 5]},
-        {"type": "town", "buildings": [33, 34, 35]},
-        {"type": "town", "buildings": [36, 38, 33]}
+        {"type": "city", "buildings": [12, 3, 9, 5, 6]},
+        {"type": "town", "buildings": [19, 20, 21]},
+        {"type": "town", "buildings": [22, 24, 19]}
     ]
 }
 

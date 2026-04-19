@@ -1,9 +1,12 @@
 {
   "_legend": {
     "id_ranges": {
-      "0-13":  "city-only",
-      "14-32": "shared (city + town)",
-      "33-40": "town-only"
+      "0":     "empty slot",
+      "1-14":  "city-only",
+      "15-16": "shared port buildings (requires coast)",
+      "17":    "shared resource buildings X tier (160 qty / primary — Goldsmith for gold)",
+      "18":    "shared resource buildings Y tier (20 qty / secondary — Gold Mine for gold)",
+      "19-26": "town-only"
     },
     "valid_in": "Settlements where this building can be constructed",
     "category": "Building category: religion | administration | commerce | culture | sanitation | industry | port | resource | agriculture",
@@ -15,9 +18,12 @@
       "cu": "culture"
     },
     "notes": [
+      "ID 0 is the empty slot — returned by getBuilding when no valid building is found",
+      "Resource buildings share an ID within their tier — use requires field to resolve the correct entry for a settlement",
+      "Resources with no Y tier building: dyes, furs, gems, lead, timber, olives, salt, silk, spice",
       "food and happiness are regional totals",
       "sanitation is per-settlement unless key is sanitation_regional",
-      "fertility-based formulae (Wheat Fields, Cattle Farms, Stables, Sheep Farms) must be evaluated at runtime",
+      "fertility-based formulae must be evaluated at runtime",
       "Military Port appears in mutually_exclusive references but is not yet a buildable entry"
     ]
   },
@@ -25,6 +31,14 @@
   "buildings": [
     {
       "id": 0,
+      "name": "Empty",
+      "valid_in": ["city", "town"],
+      "category": "none",
+      "effects": {},
+      "modifiers": {}
+    },
+    {
+      "id": 1,
       "name": "Cathedral",
       "valid_in": ["city"],
       "category": "religion",
@@ -38,7 +52,7 @@
       }
     },
     {
-      "id": 1,
+      "id": 2,
       "name": "Monastery",
       "valid_in": ["city"],
       "category": "religion",
@@ -49,11 +63,11 @@
       "modifiers": {
         "research": 0.25,
         "religion": 6,
-        "religion_adjacent": 3 
+        "religion_adjacent": 3
       }
     },
     {
-      "id": 2,
+      "id": 3,
       "name": "Governor's Palace",
       "valid_in": ["city"],
       "category": "administration",
@@ -68,7 +82,7 @@
       }
     },
     {
-      "id": 3,
+      "id": 4,
       "name": "Treasury",
       "valid_in": ["city"],
       "category": "administration",
@@ -83,7 +97,7 @@
       }
     },
     {
-      "id": 4,
+      "id": 5,
       "name": "Wine Market",
       "valid_in": ["city"],
       "category": "commerce",
@@ -95,7 +109,7 @@
       "modifiers": { "cu_w": 0.15 }
     },
     {
-      "id": 5,
+      "id": 6,
       "name": "Food Market",
       "valid_in": ["city"],
       "category": "commerce",
@@ -111,7 +125,7 @@
       }
     },
     {
-      "id": 6,
+      "id": 7,
       "name": "Slave Market",
       "valid_in": ["city"],
       "category": "commerce",
@@ -123,7 +137,7 @@
       "modifiers": { "in_w": 0.15 }
     },
     {
-      "id": 7,
+      "id": 8,
       "name": "Library",
       "valid_in": ["city"],
       "category": "culture",
@@ -134,7 +148,7 @@
       "modifiers": { "research": 0.20 }
     },
     {
-      "id": 8,
+      "id": 9,
       "name": "Circus",
       "valid_in": ["city"],
       "category": "culture",
@@ -144,10 +158,10 @@
         "wealth": { "cu": 825 },
         "sanitation": -4
       },
-      "modifiers": { "religion":-3} 
+      "modifiers": { "religion": -3 }
     },
     {
-      "id": 9,
+      "id": 10,
       "name": "Amphitheater",
       "valid_in": ["city"],
       "category": "culture",
@@ -157,10 +171,10 @@
         "wealth": { "cu": 1650 },
         "sanitation": -2
       },
-      "modifiers": { "religion":-5 }
+      "modifiers": { "religion": -5 }
     },
     {
-      "id": 10,
+      "id": 11,
       "name": "Sewers",
       "valid_in": ["city"],
       "category": "sanitation",
@@ -173,7 +187,7 @@
       }
     },
     {
-      "id": 11,
+      "id": 12,
       "name": "Aqueduct",
       "valid_in": ["city"],
       "category": "sanitation",
@@ -185,7 +199,7 @@
       }
     },
     {
-      "id": 12,
+      "id": 13,
       "name": "Adobe Kiln",
       "valid_in": ["city"],
       "category": "industry",
@@ -196,7 +210,7 @@
       }
     },
     {
-      "id": 13,
+      "id": 14,
       "name": "Pewter Manufacture",
       "valid_in": ["city"],
       "category": "industry",
@@ -206,9 +220,8 @@
         "sanitation": -10
       }
     },
-
     {
-      "id": 14,
+      "id": 15,
       "name": "Trade Port",
       "valid_in": ["city", "town"],
       "category": "port",
@@ -221,7 +234,7 @@
       }
     },
     {
-      "id": 15,
+      "id": 16,
       "name": "Fishing Port",
       "valid_in": ["city", "town"],
       "category": "port",
@@ -235,25 +248,11 @@
       }
     },
     {
-      "id": 16,
-      "name": "Gold Mine",
-      "valid_in": ["city", "town"],
-      "category": "resource",
-      "requires": ["gold"],
-      "mutually_exclusive": ["Goldsmith"],
-      "effects": {
-        "wealth": { "in": 2500 },
-        "happiness": -15,
-        "sanitation": -10
-      }
-    },
-    {
       "id": 17,
       "name": "Goldsmith",
       "valid_in": ["city", "town"],
       "category": "resource",
       "requires": ["gold"],
-      "mutually_exclusive": ["Gold Mine"],
       "effects": {
         "wealth": { "co": 3000 },
         "happiness": -15,
@@ -262,7 +261,7 @@
       "modifiers": { "tariff_wealth": 0.15 }
     },
     {
-      "id": 18,
+      "id": 17,
       "name": "Dye Factory",
       "valid_in": ["city", "town"],
       "category": "resource",
@@ -278,27 +277,11 @@
       }
     },
     {
-      "id": 19,
-      "name": "Forge",
-      "valid_in": ["city", "town"],
-      "category": "resource",
-      "requires": ["iron"],
-      "mutually_exclusive": ["Foundry"],
-      "effects": {
-        "resource_qty": 20,
-        "resource_val": 6,
-        "happiness": -4,
-        "sanitation": -6
-      },
-      "modifiers": { "recruitment_cost": -0.15 }
-    },
-    {
-      "id": 20,
+      "id": 17,
       "name": "Foundry",
       "valid_in": ["city", "town"],
       "category": "resource",
       "requires": ["iron"],
-      "mutually_exclusive": ["Forge"],
       "effects": {
         "resource_qty": 160,
         "resource_val": 6,
@@ -311,22 +294,21 @@
       }
     },
     {
-      "id": 21,
-      "name": "Fruit Dryer",
+      "id": 17,
+      "name": "Vineyard",
       "valid_in": ["city", "town"],
       "category": "resource",
       "requires": ["grapes"],
-      "mutually_exclusive": ["Vineyard"],
       "effects": {
-        "resource_qty": 20,
+        "resource_qty": 160,
         "resource_val": 10,
-        "food": 170,
-        "happiness": 5,
+        "food": 90,
+        "happiness": 9,
         "sanitation": -5
       }
     },
     {
-      "id": 22,
+      "id": 17,
       "name": "Fur Market",
       "valid_in": ["city", "town"],
       "category": "resource",
@@ -340,7 +322,7 @@
       }
     },
     {
-      "id": 23,
+      "id": 17,
       "name": "Gem Cutter",
       "valid_in": ["city", "town"],
       "category": "resource",
@@ -353,7 +335,7 @@
       }
     },
     {
-      "id": 24,
+      "id": 17,
       "name": "Lead Mine",
       "valid_in": ["city", "town"],
       "category": "resource",
@@ -370,7 +352,7 @@
       }
     },
     {
-      "id": 25,
+      "id": 17,
       "name": "Lumber Camp",
       "valid_in": ["city", "town"],
       "category": "resource",
@@ -382,7 +364,7 @@
       "modifiers": { "in_w": 0.15 }
     },
     {
-      "id": 26,
+      "id": 17,
       "name": "Olive Orchard",
       "valid_in": ["city", "town"],
       "category": "resource",
@@ -396,12 +378,11 @@
       "modifiers": { "co_w": 0.20 }
     },
     {
-      "id": 27,
+      "id": 17,
       "name": "Quarry",
       "valid_in": ["city", "town"],
       "category": "resource",
       "requires": ["marble"],
-      "mutually_exclusive": ["Sculptor"],
       "effects": {
         "resource_qty": 160,
         "resource_val": 8,
@@ -411,7 +392,7 @@
       }
     },
     {
-      "id": 28,
+      "id": 17,
       "name": "Salt Works",
       "valid_in": ["city", "town"],
       "category": "resource",
@@ -426,26 +407,7 @@
       }
     },
     {
-      "id": 29,
-      "name": "Sculptor",
-      "valid_in": ["city", "town"],
-      "category": "resource",
-      "requires": ["marble"],
-      "mutually_exclusive": ["Quarry"],
-      "effects": {
-        "resource_qty": 20,
-        "resource_val": 8,
-        "happiness": -4,
-        "sanitation": -6
-      },
-      "modifiers": {
-        "cu_w": 0.20,
-        "construction_cost": -0.15,
-        "religion": 3
-      }
-    },
-    {
-      "id": 30,
+      "id": 17,
       "name": "Silk Market",
       "valid_in": ["city", "town"],
       "category": "resource",
@@ -459,7 +421,7 @@
       "modifiers": { "co_w": 0.20 }
     },
     {
-      "id": 31,
+      "id": 17,
       "name": "Spice Port",
       "valid_in": ["city", "town"],
       "category": "resource",
@@ -473,22 +435,65 @@
       }
     },
     {
-      "id": 32,
-      "name": "Vineyard",
+      "id": 18,
+      "name": "Gold Mine",
+      "valid_in": ["city", "town"],
+      "category": "resource",
+      "requires": ["gold"],
+      "effects": {
+        "wealth": { "in": 2500 },
+        "happiness": -15,
+        "sanitation": -10
+      }
+    },
+    {
+      "id": 18,
+      "name": "Forge",
+      "valid_in": ["city", "town"],
+      "category": "resource",
+      "requires": ["iron"],
+      "effects": {
+        "resource_qty": 20,
+        "resource_val": 6,
+        "happiness": -4,
+        "sanitation": -6
+      },
+      "modifiers": { "recruitment_cost": -0.15 }
+    },
+    {
+      "id": 18,
+      "name": "Fruit Dryer",
       "valid_in": ["city", "town"],
       "category": "resource",
       "requires": ["grapes"],
-      "mutually_exclusive": ["Fruit Dryer"],
       "effects": {
-        "resource_qty": 160,
+        "resource_qty": 20,
         "resource_val": 10,
-        "food": 90,
-        "happiness": 9,
+        "food": 170,
+        "happiness": 5,
         "sanitation": -5
       }
     },
     {
-      "id": 33,
+      "id": 18,
+      "name": "Sculptor",
+      "valid_in": ["city", "town"],
+      "category": "resource",
+      "requires": ["marble"],
+      "effects": {
+        "resource_qty": 20,
+        "resource_val": 8,
+        "happiness": -4,
+        "sanitation": -6
+      },
+      "modifiers": {
+        "cu_w": 0.20,
+        "construction_cost": -0.15,
+        "religion": 3
+      }
+    },
+    {
+      "id": 19,
       "name": "Wheat Fields",
       "valid_in": ["town"],
       "category": "agriculture",
@@ -500,7 +505,7 @@
       }
     },
     {
-      "id": 34,
+      "id": 20,
       "name": "Cattle Farms",
       "valid_in": ["town"],
       "category": "agriculture",
@@ -512,7 +517,7 @@
       }
     },
     {
-      "id": 35,
+      "id": 21,
       "name": "Stables",
       "valid_in": ["town"],
       "category": "agriculture",
@@ -524,7 +529,7 @@
       }
     },
     {
-      "id": 36,
+      "id": 22,
       "name": "Sheep Farms",
       "valid_in": ["town"],
       "category": "agriculture",
@@ -536,7 +541,7 @@
       }
     },
     {
-      "id": 37,
+      "id": 23,
       "name": "Church",
       "valid_in": ["town"],
       "category": "religion",
@@ -545,11 +550,11 @@
         "happiness": 5
       },
       "modifiers": {
-        "religion": 5 
+        "religion": 5
       }
     },
     {
-      "id": 38,
+      "id": 24,
       "name": "Bath House",
       "valid_in": ["town"],
       "category": "sanitation",
@@ -562,7 +567,7 @@
       }
     },
     {
-      "id": 39,
+      "id": 25,
       "name": "Builder's Workshop",
       "valid_in": ["town"],
       "category": "industry",
@@ -574,7 +579,7 @@
       "modifiers": { "construction_cost": -0.15 }
     },
     {
-      "id": 40,
+      "id": 26,
       "name": "Tanner",
       "valid_in": ["town"],
       "category": "industry",
