@@ -119,6 +119,7 @@ def scoreRegion(data, violations):
             synergy += round(base*val if val >= 0.3 else (base*val)/synParam)
 
     penalty = sum(violations)*TKPenalityParam
+    print(data["modifiers"], "\n", f"Wealth: {wScore}\n Food: {fScore}\n Happiness: {hScore}\n Synergy: {synergy}\n Religion: {rScore}\n Trade: {tScore}\n Penalty: {penalty}")
 
     score = wScore + fScore + hScore + synergy + rScore + tScore- penalty
     return score
@@ -155,7 +156,6 @@ def evaluate(region):
         regReligion = regModifiers.get("religion", 0)
     
     baseWealth = regWealth.copy()
-    print(baseWealth)
     #Apply wealth modifiers if applicable
     for mod, val in regModifiers.items():
         match mod:
@@ -183,9 +183,10 @@ def evaluate(region):
         "wealth": totalWealth,
         "base_wealth": baseWealth,
         "modifiers": regModifiers,
+        "trade_value": totalTradeWealth,
         "religion": regReligion
     }
-    print(scoreRegion(regionData, violations))
+    print(" Final Score:",scoreRegion(regionData, violations))
     
     return {
         "settlement_sanitation": locSan,

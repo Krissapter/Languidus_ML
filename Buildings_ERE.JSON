@@ -48,7 +48,7 @@
       },
       "modifiers": {
         "research": 0.25,
-        "religion": 6 ,
+        "religion": 6,
         "religion_adjacent": 3 
       }
     },
