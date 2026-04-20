@@ -10,10 +10,11 @@ BASE_STATS = {
 def loadBuildings():
     with open("Buildings_ERE.JSON") as f:
         data = json.load(f)
-    return data["buildings"]
+    with open("Resources_ERE.JSON") as d:
+        rsrc = json.load(d)
+    return data["buildings"], rsrc["resources"]
 
-buildingList = loadBuildings()
-
+buildingList, resourceList = loadBuildings()
 #Check the effects of a given building
 def getBuildingEffects(building, fertility):
     effects = building.get("effects", {})
@@ -46,22 +47,24 @@ def evalExpression(expr, fertility):
         return expr
     return eval(expr, {"fertility": fertility})
 
-def getBuilding(bid, resource=None):
+def getBuilding(bid, resourceId=0, coast=False):
     for b in buildingList:
         if b["id"] == bid:
             reqs= b.get("requires", [])
-            if not reqs or resource in reqs:
+            if not reqs or (resourceList[resourceId] in reqs) or ("coast" in reqs and coast):
                 return b
     return buildingList[0]
     
 
 #Compiles the settlement as a sum of the building effects + innate effects
-def evaluateSettlement(buildingIds, fertility, resource):
-    
+def evaluateSettlement(settlementType, buildingIds, fertility, resource, coast):
+
+    base = BASE_STATS[settlementType]
+
     totals = {
-        "food": 0,
-        "happiness": 0,
-        "sanitation": 0,
+        "food": base["food"],
+        "happiness": base["happiness"],
+        "sanitation": base["sanitation"],
         "sanitation_regional": 0,
         "wealth": {},
         "modifiers": {},
@@ -69,7 +72,7 @@ def evaluateSettlement(buildingIds, fertility, resource):
     }
     #Add stuff together and put it in the dict
     for bid in buildingIds:
-        effects = getBuildingEffects(getBuilding(bid, resource), fertility)
+        effects = getBuildingEffects(getBuilding(bid, resource, coast), fertility)
         for key in totals:
             if key == "wealth" or key == "modifiers":
                 for cat, val in effects[key].items():
@@ -129,27 +132,29 @@ def scoreRegion(data, violations):
             synergy += round(base*val if val >= 0.3 else (base*val)/synParam)
 
     penalty = sum(violations)*TKPenalityParam
-    print(data["modifiers"], "\n", f"Wealth: {wScore}\n Food: {fScore}\n Happiness: {hScore}\n Synergy: {synergy}\n Religion: {rScore}\n Trade: {tScore}\n Penalty: {penalty}")
-
+    
     score = wScore + fScore + hScore + synergy + rScore + tScore- penalty
     return score
 
 def evaluate(region):
-
-    fertility = region.get("fertility", 0)  
+    settlementsArr = [region[:5], region[5:8],region[8:11]]
+    fertility = region[11]
+    coastArr = region[12:15]
+    typeArr = ["city", "town", "town"]
+    resourceArr = region[18:21]
 
     regionStats = [
-        evaluateSettlement(s["buildings"], fertility, s.get("resource", 0))
-        for s in region["settlements"]
+        evaluateSettlement(typeArr[i], settlementsArr[i], fertility, coastArr[i],resourceArr[i])
+        for i in range(3)
     ]
     #local sanitation
-    locSan = [BASE_STATS["city"]["sanitation"], BASE_STATS["town"]["sanitation"], BASE_STATS["town"]["sanitation"]]
+    locSan = []
     regionalSan = sum(s["sanitation_regional"] for s in regionStats)
-    for i, s in enumerate(regionStats):
-        locSan[i] += (s["sanitation"] + regionalSan)
+    for s in regionStats:
+        locSan.append(s["sanitation"] + regionalSan) 
 
-    regFood = BASE_STATS["city"]["food"] + BASE_STATS["town"]["food"] + BASE_STATS["town"]["food"]
-    regHappy = BASE_STATS["city"]["happiness"] + BASE_STATS["town"]["happiness"] + BASE_STATS["town"]["happiness"]
+    regFood = 0
+    regHappy = 0
     regReligion = 0
     regWealth = {}
     regModifiers = {}
@@ -164,7 +169,7 @@ def evaluate(region):
         regFood += s["food"]
         regHappy += s["happiness"]
         regReligion = regModifiers.get("religion", 0)
-
+    
     baseWealth = regWealth.copy()
     #Apply wealth modifiers if applicable
     for mod, val in regModifiers.items():
@@ -209,14 +214,7 @@ def evaluate(region):
             "religion": regReligion
         }
     }
+#[0-4] City buildings, [5-7] Town 1 buildings, [8-10] Town 2 buildings, [11] Fertility, [12-14] Coastal Bools, [15-17] Has Resource Bool, [18-20] Resource IDs
+regArray = [12, 3, 9, 5, 6, 19, 20, 21, 22, 24, 19, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-region = {
-    "fertility": 3,
-    "settlements": [
-        {"type": "city", "buildings": [12, 3, 9, 5, 6]},
-        {"type": "town", "buildings": [19, 20, 21]},
-        {"type": "town", "buildings": [22, 24, 19]}
-    ]
-}
-
-evaluate(region)
+evaluate(regArray)
