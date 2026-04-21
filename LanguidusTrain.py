@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.wrappers import ActionMasker
 from stable_baselines3.common.callbacks import BaseCallback
@@ -19,7 +20,7 @@ env = ActionMasker(env, lambda e: e.getActionMask())
 env = DummyVecEnv([lambda: env])
 env = VecNormalize(env, norm_obs=False, norm_reward=True, clip_reward=10.0)
 
-model = MaskablePPO("MlpPolicy", env, verbose=1, ent_coef=0.05)
+model = MaskablePPO("MlpPolicy", env, verbose=0, ent_coef=0.05)
 
 class RewardCallback(BaseCallback):
     def __init__(self):
@@ -32,13 +33,18 @@ class RewardCallback(BaseCallback):
             self.episodeRewards.append(rawReward[0])
         return True
 
-def train(timestepsPerRound, rounds):
+def train(hours):
     callback = RewardCallback()
-    for i in range(rounds):
-        print(f"Round {i+1}/{rounds}")
-        model.learn(timestepsPerRound, callback=callback, reset_num_timesteps=False)
+    startTime = time.time()
+    limit = hours*3600
+    round = 1
+
+    while(time.time() - startTime < limit):
+        print(f"Round {round}")
+        model.learn(100000, callback=callback, reset_num_timesteps=False)
         model.save("languidus_ppo")
         env.save("languidus_vecnormalize.pk1")
+        round += 1
 
     plotRewards(callback.episodeRewards)
     
@@ -60,4 +66,4 @@ def plotRewards(rewards, window=100):
     plt.savefig("training_progress.png")
     plt.show()
 
-train(timestepsPerRound=10000, rounds=5)
+train(11)
