@@ -7,14 +7,14 @@ BASE_STATS = {
     "town": {"food": -80, "happiness": 3, "sanitation": -2, "wealth": 300},
 }
 
-def loadBuildings():
+def loadData():
     with open("Buildings_ERE.JSON") as f:
         data = json.load(f)
     with open("Resources_ERE.JSON") as d:
         rsrc = json.load(d)
     return data["buildings"], rsrc["resources"]
 
-buildingList, resourceList = loadBuildings()
+buildingList, resourceList = loadData()
 #Check the effects of a given building
 def getBuildingEffects(building, fertility):
     effects = building.get("effects", {})
@@ -47,17 +47,17 @@ def evalExpression(expr, fertility):
         return expr
     return eval(expr, {"fertility": fertility})
 
-def getBuilding(bid, resourceId=0, coast=False):
-    for b in buildingList:
+def getBuilding(buildList, rscrList, bid, resourceId=0, coast=False):
+    for b in buildList:
         if b["id"] == bid:
             reqs= b.get("requires", [])
-            if not reqs or (resourceList[resourceId] in reqs) or ("coast" in reqs and coast):
+            if not reqs or (rscrList[resourceId] in reqs) or ("coast" in reqs and coast):
                 return b
-    return buildingList[0]
+    return buildList[0]
     
 
 #Compiles the settlement as a sum of the building effects + innate effects
-def evaluateSettlement(settlementType, buildingIds, fertility, resource, coast):
+def evaluateSettlement(buildList, rscrList, settlementType, buildingIds, fertility, resource, coast):
 
     base = BASE_STATS[settlementType]
 
@@ -72,7 +72,7 @@ def evaluateSettlement(settlementType, buildingIds, fertility, resource, coast):
     }
     #Add stuff together and put it in the dict
     for bid in buildingIds:
-        effects = getBuildingEffects(getBuilding(bid, resource, coast), fertility)
+        effects = getBuildingEffects(getBuilding(buildList, rscrList, bid, resource, coast), fertility)
         for key in totals:
             if key == "wealth" or key == "modifiers":
                 for cat, val in effects[key].items():
@@ -136,7 +136,7 @@ def scoreRegion(data, violations):
     score = wScore + fScore + hScore + synergy + rScore + tScore- penalty
     return score
 
-def evaluate(region):
+def evaluate(region, buildList, rscrList):
     settlementsArr = [region[:5], region[5:8],region[8:11]]
     fertility = region[11]
     coastArr = region[12:15]
@@ -144,7 +144,7 @@ def evaluate(region):
     resourceArr = region[18:21]
 
     regionStats = [
-        evaluateSettlement(typeArr[i], settlementsArr[i], fertility, coastArr[i],resourceArr[i])
+        evaluateSettlement(buildList, rscrList, typeArr[i], settlementsArr[i], fertility, coastArr[i],resourceArr[i])
         for i in range(3)
     ]
     #local sanitation
@@ -201,9 +201,8 @@ def evaluate(region):
         "trade_value": totalTradeWealth,
         "religion": regReligion
     }
-    print(" Final Score:",scoreRegion(regionData, violations))
     
-    return {
+    return scoreRegion(regionData, violations), {
         "settlement_sanitation": locSan,
         "region": {
             "food": regFood,
@@ -217,4 +216,5 @@ def evaluate(region):
 #[0-4] City buildings, [5-7] Town 1 buildings, [8-10] Town 2 buildings, [11] Fertility, [12-14] Coastal Bools, [15-17] Has Resource Bool, [18-20] Resource IDs
 regArray = [12, 3, 9, 5, 6, 19, 20, 21, 22, 24, 19, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-evaluate(regArray)
+test = evaluate(regArray,buildingList, resourceList)
+print(test[0], "\n", test[1])
