@@ -85,6 +85,9 @@ def evaluateSettlement(buildList, rscrList, settlementType, buildingIds, fertili
 def checkConstraint(regionData):
     violations = []
     sanitation = regionData["sanitation"]
+
+    #Severity based (Low penalty modifier (15-25))
+    """
     j = 0
     if regionData["food"] < 0:
         violations.append(regionData["food"]*-1)
@@ -95,6 +98,19 @@ def checkConstraint(regionData):
         if i < 0:
             violations.append(-i*10)
     return violations
+    """
+    #Infraction based (High penalty modifier (10000))
+    if regionData["food"] < 0:
+        violations.append(1)
+
+    if regionData["happiness"] < 13:
+        violations.append(1)
+
+    for i, sanitation in enumerate(regionData["sanitation"]):
+        if sanitation < 0:
+            violations.append(1)
+
+    return violations
 
 #Scores the region based on the data collected
 def scoreRegion(data, violations):
@@ -104,7 +120,7 @@ def scoreRegion(data, violations):
     religionParam = 100
     relAdjParam = 50
     synParam = 2
-    TKPenalityParam = 1000
+    TKPenalityParam = 10000
 
     food = data["food"]
     happy = data["happiness"]
@@ -132,7 +148,7 @@ def scoreRegion(data, violations):
             synergy += round(base*val if val >= 0.3 else (base*val)/synParam)
 
     penalty = sum(violations)*TKPenalityParam
-    
+
     score = wScore + fScore + hScore + synergy + rScore + tScore- penalty
     return score
 

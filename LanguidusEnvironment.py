@@ -45,12 +45,11 @@ class LanguidusEnv(gym.Env):
         slotIdx = action // 27
         buildingId = action % 27
         self.slots[slotIdx] = buildingId
-
-        result = evaluate(self.buildRegion(), buildingList, resourceList)
-        #print(result[1])
+        
+        reward = evaluate(self.buildRegion(), buildingList, resourceList)
         done = all(s != 0 for s in self.slots)
         obs = self.getObs()
-        return obs, result[0], done, False, {}
+        return obs, reward[0], done, False, {"raw_reward": reward}
     
     def buildRegion(self):
         context = self.regionContext
