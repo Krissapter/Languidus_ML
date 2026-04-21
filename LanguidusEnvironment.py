@@ -18,15 +18,15 @@ class LanguidusEnv(gym.Env):
             2, 2, 2, #hasResource boolean
             14, 14, 14, #resourceIDs for each settlement
         ])
-        self.action_space = gym.spaces.MultiDiscrete([
-            11, #building slots
-            27, #building IDs
-        ])
+        self.action_space = gym.spaces.Discrete(
+            11* #building slots
+            27 #building IDs
+        )
 
     def getObs(self):
             context = self.regionContext
             return np.array(
-                self.slot + 
+                self.slots + 
                 [context["fertility"]] +
                 context["coast"] +
                 context["hasResource"] +
@@ -34,7 +34,7 @@ class LanguidusEnv(gym.Env):
                 dtype=np.int32
             )
         
-    def reset(self, seed=None):
+    def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self.slots = [0]*11
         obs = self.getObs()
@@ -42,11 +42,12 @@ class LanguidusEnv(gym.Env):
 
         
     def step(self, action):
-        slotIdx, buildingId = action
+        slotIdx = action // 27
+        buildingId = action % 27
         self.slots[slotIdx] = buildingId
 
-        result = evaluate(self.buildRegion())
-
+        result = evaluate(self.buildRegion(), buildingList, resourceList)
+        #print(result[1])
         done = all(s != 0 for s in self.slots)
         obs = self.getObs()
         return obs, result[0], done, False, {}
@@ -63,7 +64,8 @@ class LanguidusEnv(gym.Env):
             dtype=np.int32
         )
     
-    def getActionMask(regArray):
+    def getActionMask(self):
+        regArray = self.getObs()
         mask = np.ones((11, 27), dtype = bool)
 
         slots = regArray[0:11]
@@ -75,7 +77,7 @@ class LanguidusEnv(gym.Env):
         for sIdx, (start, end, sType) in enumerate(slotGroups):
             #Grab all preexisting buildings from settlement
             placedBuildings = [
-                getBuilding(buildingList, slot[i], resources[sIdx]).get("name")
+                getBuilding(buildingList,resourceList, slots[i], resources[sIdx], coast[sIdx]).get("name")
                 for i in range(start, end) if slots[i] != 0
             ]
             #Collect all buildings that are mutually exclusive with preexisting buildings
@@ -106,5 +108,5 @@ class LanguidusEnv(gym.Env):
                         mask[slot, bid] = False
                     if b["name"] in excluded:
                         mask[slot, bid] = False
-        return mask
+        return mask.flatten()
                         

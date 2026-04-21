@@ -51,7 +51,7 @@ def getBuilding(buildList, rscrList, bid, resourceId=0, coast=False):
     for b in buildList:
         if b["id"] == bid:
             reqs= b.get("requires", [])
-            if not reqs or (rscrList[resourceId] in reqs) or ("coast" in reqs and coast):
+            if not reqs or (rscrList[resourceId]["resource"] in reqs) or ("coast" in reqs and coast):
                 return b
     return buildList[0]
     
@@ -93,7 +93,7 @@ def checkConstraint(regionData):
     for i in sanitation:
         j += 1
         if i < 0:
-            violations.append(i)
+            violations.append(-i*10)
     return violations
 
 #Scores the region based on the data collected
@@ -104,7 +104,7 @@ def scoreRegion(data, violations):
     religionParam = 100
     relAdjParam = 50
     synParam = 2
-    TKPenalityParam = 10000
+    TKPenalityParam = 1000
 
     food = data["food"]
     happy = data["happiness"]
@@ -144,7 +144,7 @@ def evaluate(region, buildList, rscrList):
     resourceArr = region[18:21]
 
     regionStats = [
-        evaluateSettlement(buildList, rscrList, typeArr[i], settlementsArr[i], fertility, coastArr[i],resourceArr[i])
+        evaluateSettlement(buildList, rscrList, typeArr[i], settlementsArr[i], fertility, resourceArr[i], coastArr[i])
         for i in range(3)
     ]
     #local sanitation
@@ -201,7 +201,7 @@ def evaluate(region, buildList, rscrList):
         "trade_value": totalTradeWealth,
         "religion": regReligion
     }
-    
+
     return scoreRegion(regionData, violations), {
         "settlement_sanitation": locSan,
         "region": {
@@ -214,7 +214,8 @@ def evaluate(region, buildList, rscrList):
         }
     }
 #[0-4] City buildings, [5-7] Town 1 buildings, [8-10] Town 2 buildings, [11] Fertility, [12-14] Coastal Bools, [15-17] Has Resource Bool, [18-20] Resource IDs
-regArray = [12, 3, 9, 5, 6, 19, 20, 21, 22, 24, 19, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
-test = evaluate(regArray,buildingList, resourceList)
-print(test[0], "\n", test[1])
+# Example regArray = [12, 3, 9, 5, 6, 19, 20, 21, 22, 24, 19, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+#regArray = [1, 3, 12, 6, 17, 19, 23, 24, 20, 21, 22, 3, 0, 0, 0, 1, 0, 0, 3, 0, 0]
+#regArray_adj = [2, 3, 12, 6, 17, 19, 23, 24, 20, 21, 22, 3, 0, 0, 0, 1, 0, 0, 3, 0, 0]
+#regArray_penalty = [13, 14, 5, 7, 0, 25, 26, 19, 25, 26, 20, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+#evaluate(regArray_penalty, buildingList, resourceList)
