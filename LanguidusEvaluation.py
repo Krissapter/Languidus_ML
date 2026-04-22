@@ -1,5 +1,5 @@
-import json
 import math
+from DataLoader import buildLoader, rsrcLoader
 
 #Defines the base values of each settlement
 BASE_STATS = {
@@ -7,14 +7,8 @@ BASE_STATS = {
     "town": {"food": -80, "happiness": 3, "sanitation": -2, "wealth": 300},
 }
 
-def loadData():
-    with open("Buildings_ERE.JSON") as f:
-        data = json.load(f)
-    with open("Resources_ERE.JSON") as d:
-        rsrc = json.load(d)
-    return data["buildings"], rsrc["resources"]
-
-buildingList, resourceList = loadData()
+buildingList = buildLoader()
+resourceList = rsrcLoader()
 #Check the effects of a given building
 def getBuildingEffects(building, fertility):
     effects = building.get("effects", {})
@@ -87,7 +81,7 @@ def checkConstraint(regionData):
     sanitation = regionData["sanitation"]
 
     #Severity based (Low penalty modifier (15-25))
-    """
+    
     j = 0
     if regionData["food"] < 0:
         violations.append(regionData["food"]*-1)
@@ -98,9 +92,9 @@ def checkConstraint(regionData):
         if i < 0:
             violations.append(-i*10)
     return violations
-    """
+   
     #Infraction based (High penalty modifier (10000))
-    if regionData["food"] < 0:
+    """ if regionData["food"] < 0:
         violations.append(1)
 
     if regionData["happiness"] < 13:
@@ -110,7 +104,7 @@ def checkConstraint(regionData):
         if sanitation < 0:
             violations.append(1)
 
-    return violations
+    return violations """
 
 #Scores the region based on the data collected
 def scoreRegion(data, violations):
@@ -120,7 +114,7 @@ def scoreRegion(data, violations):
     religionParam = 100
     relAdjParam = 50
     synParam = 2
-    TKPenalityParam = 10000
+    TKPenalityParam = 100
 
     food = data["food"]
     happy = data["happiness"]
@@ -153,6 +147,7 @@ def scoreRegion(data, violations):
     return score
 
 def evaluate(region, buildList, rscrList):
+    region = [int(x) for x in region]
     settlementsArr = [region[:5], region[5:8],region[8:11]]
     fertility = region[11]
     coastArr = region[12:15]
