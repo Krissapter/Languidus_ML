@@ -10,14 +10,11 @@ class LanguidusEnv(gym.Env):
         self.buildings = buildings #list of buildings
         self.regionContext = regionContext #Fertility, coastline & resources
         self.slots = [0] * 11 #The funny input vector array
+        self.currentStats = None
 
-        self.observation_space = gym.spaces.MultiDiscrete([
-            27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, #11 building slots with 27 possible buildings
-            6, #fertility
-            2, 2, 2, #Coastal boolean for each settlement
-            2, 2, 2, #hasResource boolean
-            14, 14, 14, #resourceIDs for each settlement
-        ])
+        self.observation_space = gym.spaces.Box(
+            low=np.inf, high=np.inf, shape=(27,), dtype=np.float32
+        )
         self.action_space = gym.spaces.Discrete(
             11* #building slots
             27 #building IDs
@@ -25,14 +22,21 @@ class LanguidusEnv(gym.Env):
 
     def getObs(self):
             context = self.regionContext
-            return np.array(
-                self.slots + 
-                [context["fertility"]] +
-                context["coast"] +
-                context["hasResource"] +
-                context["resources"],
-                dtype=np.int32
-            )
+            base = self.slots + [context["fertility"]] + context["coast"] + context["hasResource"] + context["resources"]
+
+            if self.currentStats is None:
+                stats = [0,0,0,0,0,0] #Food, happiness, san x3, wealth
+            else:
+                r = self.currentStats["region"]
+                stats = [
+                    r["food"],
+                    r["happiness"],
+                    self.currentStats["settlement_sanitation"][0],
+                    self.currentStats["settlement_sanitation"][1],
+                    self.currentStats["settlement_sanitation"][2],
+                    r["wealth"]
+                ]
+            return np.array(base+stats, dtype=np.float32)
         
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -46,10 +50,11 @@ class LanguidusEnv(gym.Env):
         buildingId = action % 27
         self.slots[slotIdx] = buildingId
         
-        reward = evaluate(self.buildRegion(), buildingList, resourceList)
+        reward, details = evaluate(self.buildRegion(), buildingList, resourceList)
+        self.currentStats = details
         done = all(s != 0 for s in self.slots)
         obs = self.getObs()
-        return obs, reward[0], done, False, {"raw_reward": reward}
+        return obs, reward, done, False, {"raw_reward": (reward, details)}
     
     def buildRegion(self):
         context = self.regionContext
@@ -66,6 +71,7 @@ class LanguidusEnv(gym.Env):
     def getActionMask(self):
         regArray = self.getObs()
         mask = np.ones((11, 27), dtype = bool)
+        regArray = [int(x) for x in regArray[0:21]]
 
         slots = regArray[0:11]
         coast = regArray[12:15]
