@@ -1,19 +1,22 @@
 import gymnasium as gym
 import numpy as np
-from LanguidusEvaluation import evaluate, loadData, getBuilding
-
-buildingList, resourceList = loadData()
+import random as rnd
+from LanguidusEvaluation import evaluate, getBuilding
+from DataLoader import buildLoader, rsrcLoader
+buildingList = buildLoader()
+resourceList = rsrcLoader()
 
 class LanguidusEnv(gym.Env):
-    def __init__(self, buildings, regionContext):
+    def __init__(self, buildings, regionContexts):
         super().__init__()
         self.buildings = buildings #list of buildings
-        self.regionContext = regionContext #Fertility, coastline & resources
+        self.regionContexts = regionContexts
+        self.regionContext = None #Fertility, coastline & resources
         self.slots = [0] * 11 #The funny input vector array
         self.currentStats = None
 
         self.observation_space = gym.spaces.Box(
-            low=np.inf, high=np.inf, shape=(27,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(27,), dtype=np.float32
         )
         self.action_space = gym.spaces.Discrete(
             11* #building slots
@@ -21,7 +24,7 @@ class LanguidusEnv(gym.Env):
         )
 
     def getObs(self):
-            context = self.regionContext
+            context = self.parseContext(self.regionContext)
             base = self.slots + [context["fertility"]] + context["coast"] + context["hasResource"] + context["resources"]
 
             if self.currentStats is None:
@@ -40,7 +43,9 @@ class LanguidusEnv(gym.Env):
         
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
+        self.regionContext = rnd.choice(self.regionContexts)
         self.slots = [0]*11
+        self.currentStats = None
         obs = self.getObs()
         return obs, {}
 
@@ -57,7 +62,7 @@ class LanguidusEnv(gym.Env):
         return obs, reward, done, False, {"raw_reward": (reward, details)}
     
     def buildRegion(self):
-        context = self.regionContext
+        context = self.parseContext(self.regionContext)
         
         return np.array(
             self.slots + #:5 city, 5:8 town, 8:11 town
@@ -114,4 +119,12 @@ class LanguidusEnv(gym.Env):
                     if b["name"] in excluded:
                         mask[slot, bid] = False
         return mask.flatten()
-                        
+
+    #This is not necessary but does improve readability from details, If efficiency is the game, drop this and do an array instead
+    def parseContext(self, contextArr):
+        return{
+            "fertility": contextArr[0],
+            "coast": contextArr[1:4],
+            "hasResource": contextArr[4:7],
+            "resources": contextArr[7:10]
+        }

@@ -6,21 +6,32 @@ from sb3_contrib.common.wrappers import ActionMasker
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from LanguidusEnvironment import LanguidusEnv
-from LanguidusEvaluation import buildingList
+from DataLoader import buildLoader, regionLoader
+from sklearn.model_selection import train_test_split
 
-regionContext = {
+buildingList = buildLoader()
+contexts = regionLoader()
+
+""" regionContext = {
     "fertility": 3,
     "coast": [1, 0, 0],
     "hasResource": [0, 1, 0],
     "resources": [0, 1, 0]
-}
+} """
 
-env = LanguidusEnv(buildingList, regionContext)
+def splitContexts(contexts):
+    temp, test = train_test_split(contexts, train_size=0.85)
+    train, val = train_test_split(temp, train_size=0.90)
+    return train, val, test
+
+trainCtx, valCtx, testCtx = splitContexts(contexts)
+
+env = LanguidusEnv(buildingList, trainCtx)
 env = ActionMasker(env, lambda e: e.getActionMask())
 env = DummyVecEnv([lambda: env])
 env = VecNormalize(env, norm_obs=False, norm_reward=True, clip_reward=10.0)
 
-model = MaskablePPO("MlpPolicy", env, verbose=0, ent_coef=0.05)
+model = MaskablePPO("MlpPolicy", env, verbose=1, ent_coef=0.05)
 
 class RewardCallback(BaseCallback):
     def __init__(self):
@@ -43,7 +54,7 @@ def train(hours):
         print(f"Round {round}")
         model.learn(100000, callback=callback, reset_num_timesteps=False)
         model.save("languidus_ppo")
-        env.save("languidus_vecnormalize.pk1")
+        env.save("languidus_vecnormalize.pkl")
         round += 1
 
     plotRewards(callback.episodeRewards)
@@ -59,6 +70,8 @@ def plotRewards(rewards, window=100):
     plt.figure(figsize=(12,6))
     plt.plot(x, rollingMean, label="Mean")
     plt.fill_between(x, rollingMin, rollingMax, alpha=0.2, label= "Min/Max range")
+    plt.grid()
+    plt.ylim((-5e4, 25e3))
     plt.xlabel("Episode")
     plt.ylabel("Reward")
     plt.title("Languidus PPO Training")
@@ -66,4 +79,4 @@ def plotRewards(rewards, window=100):
     plt.savefig("training_progress.png")
     plt.show()
 
-train(11)
+train(0.1)
