@@ -77,20 +77,19 @@ def evaluateSettlement(buildList, rscrList, settlementType, buildingIds, fertili
 
 #Check if region is within soft constraints 
 def checkConstraint(regionData):
-    violations = []
+    violations = [0]*5
     sanitation = regionData["sanitation"]
 
-    #Severity based (Low penalty modifier (15-25))
-    
+    #Severity based
     j = 0
     if regionData["food"] < 0:
-        violations.append(regionData["food"]*-1)
+        violations[0]=regionData["food"]*-1
     if regionData["happiness"] < 13:
-        violations.append(13-regionData["happiness"])
+        violations[1]= 13-regionData["happiness"]
     for i in sanitation:
-        j += 1
         if i < 0:
-            violations.append(-i*10)
+            violations[2+j]= -i
+        j += 1
     return violations
    
     #Infraction based (High penalty modifier (10000))
@@ -114,7 +113,9 @@ def scoreRegion(data, violations):
     religionParam = 100
     relAdjParam = 50
     synParam = 2
-    TKPenalityParam = 100
+    foodPenaltyParam = 100
+    happyPenaltyParam = 450
+    sanPenaltyParam = 250
 
     food = data["food"]
     happy = data["happiness"]
@@ -141,9 +142,8 @@ def scoreRegion(data, violations):
             base = data["base_wealth"].get(cat, 0)
             synergy += round(base*val if val >= 0.3 else (base*val)/synParam)
 
-    penalty = sum(violations)*TKPenalityParam
-
-    score = wScore + fScore + hScore + synergy + rScore + tScore- penalty
+    penalty = violations[0]*foodPenaltyParam + violations[1]*happyPenaltyParam + sum(violations[2:5])*sanPenaltyParam
+    score = wScore + fScore + hScore + synergy + rScore + tScore - penalty
     return score
 
 def evaluate(region, buildList, rscrList):

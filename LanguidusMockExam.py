@@ -1,3 +1,5 @@
+import numpy as np
+import matplotlib.pyplot as plt
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.wrappers import ActionMasker
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
@@ -69,6 +71,32 @@ def printGrade(slots, details, context, i):
     print(f"    Trade:     {r['trade_value']}")
     print(f"\n  Final Score: {score}")
 
-for i, ctx in enumerate(valCtx[:50]):
+def plotGrades(scores):
+    mean = np.mean(scores)
+    std = np.std(scores)
+
+    plt.figure(figsize=(12, 6))
+    plt.hist(scores, bins=50, alpha=0.7, color="steelblue", edgecolor="black")
+    plt.axvline(mean, color="red", linewidth=2, label=f"Mean: {mean:.0f}")
+    plt.axvline(mean+std, color="orange", linewidth=1.5, linestyle="--", label=f"+1 STD: {mean+std:.0f}")
+    plt.axvline(mean-std, color="orange", linewidth=1.5, linestyle="--", label=f"-1 STD: {mean-std:.0f}")
+    plt.xlabel("Score")
+    plt.ylabel("Frequency")
+    plt.title("Languidus Mock Exam Score Distribution")
+    plt.legend()
+    plt.grid()
+    plt.savefig("Mock_Exam_Results.png")
+    plt.show()
+
+    print(f"\nMean:  {mean:.0f}")
+    print(f"STD:   {std:.0f}")
+    print(f"Min:   {min(scores)}")
+    print(f"Max:   {max(scores)}")
+
+scores = []
+for i, ctx in enumerate(valCtx):
     score, details, slots = mockExam(ctx)
     printGrade(slots, details, ctx, i)
+    scores.append(score)
+
+plotGrades(scores)

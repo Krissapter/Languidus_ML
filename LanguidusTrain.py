@@ -11,15 +11,6 @@ from Toolbox import buildLoader, regionLoader, contextSplitter
 buildingList = buildLoader()
 contexts = regionLoader()
 
-""" regionContext = {
-    "fertility": 3,
-    "coast": [1, 0, 0],
-    "hasResource": [0, 1, 0],
-    "resources": [0, 1, 0]
-} """
-
-
-
 trainCtx, valCtx, testCtx = contextSplitter(contexts)
 
 env = LanguidusEnv(buildingList, trainCtx)
@@ -27,7 +18,7 @@ env = ActionMasker(env, lambda e: e.getActionMask())
 env = DummyVecEnv([lambda: env])
 env = VecNormalize(env, norm_obs=False, norm_reward=True, clip_reward=10.0)
 
-model = MaskablePPO("MlpPolicy", env, verbose=1, ent_coef=0.05)
+model = MaskablePPO("MlpPolicy", env, verbose=0, ent_coef=0.05)
 
 class RewardCallback(BaseCallback):
     def __init__(self):
@@ -67,7 +58,7 @@ def plotRewards(rewards, window=100):
     plt.plot(x, rollingMean, label="Mean")
     plt.fill_between(x, rollingMin, rollingMax, alpha=0.2, label= "Min/Max range")
     plt.grid()
-    plt.ylim((-5e4, 25e3))
+    plt.ylim((-5e3, 25e3))
     plt.xlabel("Episode")
     plt.ylabel("Reward")
     plt.title("Languidus PPO Training")
@@ -75,4 +66,4 @@ def plotRewards(rewards, window=100):
     plt.savefig("training_progress.png")
     plt.show()
 
-train(0.1)
+train(7)
