@@ -6,8 +6,7 @@ from sb3_contrib.common.wrappers import ActionMasker
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from LanguidusEnvironment import LanguidusEnv
-from DataLoader import buildLoader, regionLoader
-from sklearn.model_selection import train_test_split
+from Toolbox import buildLoader, regionLoader, contextSplitter
 
 buildingList = buildLoader()
 contexts = regionLoader()
@@ -19,12 +18,9 @@ contexts = regionLoader()
     "resources": [0, 1, 0]
 } """
 
-def splitContexts(contexts):
-    temp, test = train_test_split(contexts, train_size=0.85)
-    train, val = train_test_split(temp, train_size=0.90)
-    return train, val, test
 
-trainCtx, valCtx, testCtx = splitContexts(contexts)
+
+trainCtx, valCtx, testCtx = contextSplitter(contexts)
 
 env = LanguidusEnv(buildingList, trainCtx)
 env = ActionMasker(env, lambda e: e.getActionMask())

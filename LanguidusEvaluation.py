@@ -1,5 +1,5 @@
 import math
-from DataLoader import buildLoader, rsrcLoader
+from Toolbox import buildLoader, rsrcLoader
 
 #Defines the base values of each settlement
 BASE_STATS = {

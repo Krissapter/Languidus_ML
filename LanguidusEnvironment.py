@@ -2,7 +2,7 @@ import gymnasium as gym
 import numpy as np
 import random as rnd
 from LanguidusEvaluation import evaluate, getBuilding
-from DataLoader import buildLoader, rsrcLoader
+from Toolbox import buildLoader, rsrcLoader, parseContext
 buildingList = buildLoader()
 resourceList = rsrcLoader()
 
@@ -24,7 +24,7 @@ class LanguidusEnv(gym.Env):
         )
 
     def getObs(self):
-            context = self.parseContext(self.regionContext)
+            context = parseContext(self.regionContext)
             base = self.slots + [context["fertility"]] + context["coast"] + context["hasResource"] + context["resources"]
 
             if self.currentStats is None:
@@ -62,7 +62,7 @@ class LanguidusEnv(gym.Env):
         return obs, reward, done, False, {"raw_reward": (reward, details)}
     
     def buildRegion(self):
-        context = self.parseContext(self.regionContext)
+        context = parseContext(self.regionContext)
         
         return np.array(
             self.slots + #:5 city, 5:8 town, 8:11 town
@@ -101,6 +101,7 @@ class LanguidusEnv(gym.Env):
                 if slots[slot] != 0:
                     mask[slot, :] = False
                     continue
+                mask[slot, 0] = False
                 for b in buildingList:
                     bid = b["id"]
                     reqs = b.get("requires", [])
@@ -119,12 +120,3 @@ class LanguidusEnv(gym.Env):
                     if b["name"] in excluded:
                         mask[slot, bid] = False
         return mask.flatten()
-
-    #This is not necessary but does improve readability from details, If efficiency is the game, drop this and do an array instead
-    def parseContext(self, contextArr):
-        return{
-            "fertility": contextArr[0],
-            "coast": contextArr[1:4],
-            "hasResource": contextArr[4:7],
-            "resources": contextArr[7:10]
-        }
