@@ -92,6 +92,7 @@ class LanguidusEnv(gym.Env):
             ]
             #Collect all buildings that are mutually exclusive with preexisting buildings
             excluded = set()
+            excluded.update(placedBuildings)
             for building in placedBuildings:
                 b = next((b for b in buildingList if b["name"] == building), None)
                 if b:
