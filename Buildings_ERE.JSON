@@ -252,6 +252,7 @@
       "name": "Goldsmith",
       "valid_in": ["city", "town"],
       "category": "resource",
+      "mutually_exclusive": ["Gold Mine"],
       "requires": ["gold"],
       "effects": {
         "wealth": { "co": 3000 },
@@ -281,6 +282,7 @@
       "name": "Foundry",
       "valid_in": ["city", "town"],
       "category": "resource",
+      "mutually_exclusive": ["Forge"],
       "requires": ["iron"],
       "effects": {
         "resource_qty": 160,
@@ -298,6 +300,7 @@
       "name": "Vineyard",
       "valid_in": ["city", "town"],
       "category": "resource",
+      "mutually_exclusive": ["Fruit Dryer"],
       "requires": ["grapes"],
       "effects": {
         "resource_qty": 160,
@@ -382,6 +385,7 @@
       "name": "Quarry",
       "valid_in": ["city", "town"],
       "category": "resource",
+      "mutually_exclusive": ["Sculptor"],
       "requires": ["marble"],
       "effects": {
         "resource_qty": 160,
@@ -439,6 +443,7 @@
       "name": "Gold Mine",
       "valid_in": ["city", "town"],
       "category": "resource",
+      "mutually_exclusive": ["Goldsmith"],
       "requires": ["gold"],
       "effects": {
         "wealth": { "in": 2500 },
@@ -451,6 +456,7 @@
       "name": "Forge",
       "valid_in": ["city", "town"],
       "category": "resource",
+      "mutually_exclusive": ["Foundry"],
       "requires": ["iron"],
       "effects": {
         "resource_qty": 20,
@@ -465,6 +471,7 @@
       "name": "Fruit Dryer",
       "valid_in": ["city", "town"],
       "category": "resource",
+      "mutually_exclusive": ["Vineyard"],
       "requires": ["grapes"],
       "effects": {
         "resource_qty": 20,
@@ -479,6 +486,7 @@
       "name": "Sculptor",
       "valid_in": ["city", "town"],
       "category": "resource",
+      "mutually_exclusive": ["Quarry"],
       "requires": ["marble"],
       "effects": {
         "resource_qty": 20,
