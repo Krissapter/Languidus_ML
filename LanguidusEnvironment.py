@@ -2,10 +2,10 @@ import gymnasium as gym
 import numpy as np
 import random as rnd
 from LanguidusEvaluation import evaluate, getBuilding
-from Toolbox import buildLoader, rsrcLoader, parseContext
+from Toolbox import buildLoader, rsrcLoader, parseContext, regionLoader
 buildingList = buildLoader()
 resourceList = rsrcLoader()
-
+regionContexts = regionLoader()
 class LanguidusEnv(gym.Env):
     def __init__(self, buildings, regionContexts):
         super().__init__()
@@ -54,7 +54,6 @@ class LanguidusEnv(gym.Env):
         slotIdx = action // 27
         buildingId = action % 27
         self.slots[slotIdx] = buildingId
-        
         reward, details = evaluate(self.buildRegion(), buildingList, resourceList)
         self.currentStats = details
         done = all(s != 0 for s in self.slots)
@@ -111,13 +110,21 @@ class LanguidusEnv(gym.Env):
                         mask[slot, bid] = False
                         continue
                     #Does the settlement have a boating license?
-                    if "coast" in reqs and not coast[sIdx]:
-                        mask[slot, bid] = False
-                        continue
+                    if not coast[sIdx]:
+                        mask[slot, 15] = False
+                        mask[slot, 16] = False
                     #Does the settlement know what a resource is?
-                    resourceReqs = [r for r in reqs if r != "coast"]
-                    if resourceReqs and resources[sIdx] not in resourceReqs:
-                        mask[slot, bid] = False
+                    if not resources[sIdx]:
+                        mask[slot, 17] = False
+                        mask[slot, 18] = False
+                    #Is the building already there?
                     if b["name"] in excluded:
                         mask[slot, bid] = False
         return mask.flatten()
+    
+if __name__ == "__main__":
+    testEnv = LanguidusEnv(buildingList, [[3, 1, 0, 0, 1, 0, 0, 3, 0, 0]])
+    testEnv.regionContext = [3, 1, 0, 0, 1, 0, 0, 1, 0, 0]
+    testEnv.slots = [0] * 11
+    testEnv.currentStats = None
+    testEnv.getActionMask()
