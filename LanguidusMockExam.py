@@ -25,17 +25,16 @@ def mockExam(context, model):
     for _ in range(11):
         mask = innerEnv.getActionMask()
         action, _ = model.predict(obs,action_masks=mask, deterministic=True)
-        slotIdx = action // 27
-        buildingId = action % 27
-        innerEnv.slots[slotIdx] = int(buildingId)
-        obs=innerEnv.getObs()
+        obs, _, done, _, _ = innerEnv.step(action)
+        if done == True:
+            break
     
     regArray = innerEnv.buildRegion()
     score, details = evaluate(regArray, buildingList, rsrcList)
 
     return score, details, innerEnv.slots
 
-def printGrade(slots, details, context, i):
+def printGrade(slots, details, context, i, score):
     ctx = parseContext(context)
     resources = ctx["resources"]
     coast = ctx["coast"]
@@ -50,8 +49,8 @@ def printGrade(slots, details, context, i):
     print(f"\n  Buildings:")
     for sIdx, (start, end, sType) in enumerate(slotGroups):
         names = [
-            getBuilding(buildingList, rsrcList, slots[i], resources[sIdx], coast[sIdx])["name"]
-            for i in range(start, end)
+            getBuilding(buildingList, rsrcList, slots[j], resources[sIdx], coast[sIdx])["name"]
+            for j in range(start, end)
         ]
         print(f"    {sType.capitalize()}: {', '.join(names)}")
     print(f"\n  Stats:")
@@ -99,6 +98,6 @@ if __name__ == "__main__":
     scores = []
     for i, ctx in enumerate(valCtx):
         score, details, slots = mockExam(ctx, modelDef)
-        printGrade(slots, details, ctx, i)
+        printGrade(slots, details, ctx, i, score)
         scores.append(score)
     plotGrades(scores)
