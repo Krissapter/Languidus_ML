@@ -15,16 +15,7 @@ context = regionLoader()
 
 _, valCtx, _ = contextSplitter(context)
 
-env = LanguidusEnv(buildingList, valCtx)
-env = ActionMasker(env, lambda e: e.getActionMask())
-env = DummyVecEnv([lambda: env])
-env = VecNormalize.load("languidus_vecnormalize.pkl", env)
-env.training = False
-env.norm_reward = False
-
-model = MaskablePPO.load("languidus_ppo", env=env)
-
-def mockExam(context):
+def mockExam(context, model):
     innerEnv = LanguidusEnv(buildingList, [context])
     innerEnv.regionContext = context
     innerEnv.slots = [0]*11
@@ -71,6 +62,8 @@ def printGrade(slots, details, context, i):
     print(f"    Trade:     {r['trade_value']}")
     print(f"\n  Final Score: {score}")
 
+
+
 def plotGrades(scores):
     mean = np.mean(scores)
     std = np.std(scores)
@@ -93,10 +86,19 @@ def plotGrades(scores):
     print(f"Min:   {min(scores)}")
     print(f"Max:   {max(scores)}")
 
-scores = []
-for i, ctx in enumerate(valCtx):
-    score, details, slots = mockExam(ctx)
-    printGrade(slots, details, ctx, i)
-    scores.append(score)
+if __name__ == "__main__":
+    env = LanguidusEnv(buildingList, valCtx)
+    env = ActionMasker(env, lambda e: e.getActionMask())
+    env = DummyVecEnv([lambda: env])
+    env = VecNormalize.load("languidus_vecnormalize.pkl", env)
+    env.training = False
+    env.norm_reward = False
 
-plotGrades(scores)
+    modelDef = MaskablePPO.load("languidus_ppo", env=env)
+    
+    scores = []
+    for i, ctx in enumerate(valCtx):
+        score, details, slots = mockExam(ctx, modelDef)
+        printGrade(slots, details, ctx, i)
+        scores.append(score)
+    plotGrades(scores)
