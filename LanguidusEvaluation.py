@@ -7,8 +7,6 @@ BASE_STATS = {
     "town": {"food": -80, "happiness": 3, "sanitation": -2, "wealth": 300},
 }
 
-buildingList = buildLoader()
-resourceList = rsrcLoader()
 #Check the effects of a given building
 def getBuildingEffects(building, fertility):
     effects = building.get("effects", {})
@@ -47,7 +45,7 @@ def getBuilding(buildList, rscrList, bid, resourceId=0, coast=False):
             reqs= b.get("requires", [])
             if not reqs or (rscrList[resourceId]["resource"] in reqs) or ("coast" in reqs and coast):
                 return b
-    return buildList[0]
+    raise ValueError(f"Invalid building {bid} for resource {resourceId}, coast={coast}")
     
 
 #Compiles the settlement as a sum of the building effects + innate effects
@@ -66,7 +64,10 @@ def evaluateSettlement(buildList, rscrList, settlementType, buildingIds, fertili
     }
     #Add stuff together and put it in the dict
     for bid in buildingIds:
-        effects = getBuildingEffects(getBuilding(buildList, rscrList, bid, resource, coast), fertility)
+        building = getBuilding(buildList, rscrList, bid, resource, coast)
+        if building["name"] == "Empty" and bid != 0:
+            continue
+        effects = getBuildingEffects(building, fertility)
         for key in totals:
             if key == "wealth" or key == "modifiers":
                 for cat, val in effects[key].items():
@@ -84,10 +85,10 @@ def checkConstraint(regionData):
     j = 0
     if regionData["food"] < 0:
         violations[0]=regionData["food"]*-1
-    if regionData["happiness"] < 13:
-        violations[1]= 13-regionData["happiness"]
+    if regionData["happiness"] < 15:
+        violations[1]= 15-regionData["happiness"]
     for i in sanitation:
-        if i < 0:
+        if i < 2:
             violations[2+j]= -i
         j += 1
     return violations
@@ -106,33 +107,42 @@ def checkConstraint(regionData):
     return violations """
 
 #Scores the region based on the data collected
-def scoreRegion(data, violations):
+def scoreRegion(data, violations, stage):
     #Hyperparameters
-    foodParam = 200
-    happyParam = 50
-    religionParam = 100
-    relAdjParam = 50
+    #Stage 0: Only stick, no carrot
+    #Stage 1: Import HUGE carrots from abroad
+    #Stage 2: Grow normal sized carrots at home
+    foodParam = [0, 0, 200]
+    happyParam = [0, 0, 50]
+    religionParam = [0, 0, 100]
+    relAdjParam = [0, 0, 50]
     synParam = 2
-    foodPenaltyParam = 100
-    happyPenaltyParam = 450
-    sanPenaltyParam = 250
+    tradeParam = [0, 1, 1]
+    foodPenaltyParam = [5, 10, 15]
+    happyPenaltyParam = [8, 15, 25]
+    sanPenaltyParam = [5, 10, 14]
+    wealthParam = [0, 0, 1]
 
     food = data["food"]
     happy = data["happiness"]
-    wScore = data["wealth"]
-    tScore = data["trade_value"]
+    wScore = data["wealth"]*wealthParam[stage]
+    tScore = data["trade_value"]*tradeParam[stage]
     synergy = 0
 
-    fScore = round(foodParam*math.sqrt(max(0, food)))
+    if food >= 0:
+        fScore = round(foodParam[stage]*math.sqrt(max(0, food)))
+    else:
+        fScore = 0
 
-    if happy > 13 and happy <= 18:
-        hScore = happy*happyParam
-    elif happy > 18:
-        hScore = 18*happyParam - (happy-18)*happyParam
+    
+    if happy > 15 and happy <= 20:
+        hScore = happy*happyParam[stage]
+    elif happy > 20:
+        hScore = 20*happyParam[stage] - (happy-20)*happyParam[stage]
     else:
         hScore = 0
     
-    rScore = data["modifiers"].get("religion", 0)*religionParam + data["modifiers"].get("religion_adjacent", 0)*relAdjParam
+    rScore = data["modifiers"].get("religion", 0)*religionParam[stage] + data["modifiers"].get("religion_adjacent", 0)*relAdjParam[stage]
     
     WEALTH_MODIFIERS = {"co_w": "co", "in_w": "in", "ag_w": "ag", "ah_w": "ah", "cu_w": "cu"}
     #Test with and without synergy encouragement
@@ -140,13 +150,13 @@ def scoreRegion(data, violations):
         if mod in WEALTH_MODIFIERS:
             cat = WEALTH_MODIFIERS[mod]
             base = data["base_wealth"].get(cat, 0)
-            synergy += round(base*val if val >= 0.3 else (base*val)/synParam)
+            synergy += round(base*val if val >= 0.3 else (base*val)/synParam)*stage
 
-    penalty = violations[0]*foodPenaltyParam + violations[1]*happyPenaltyParam + sum(violations[2:5])*sanPenaltyParam
+    penalty = foodPenaltyParam[stage]*violations[0]**2 + happyPenaltyParam[stage]*violations[1]**2 + sanPenaltyParam[stage]*sum(violations[2:5])**2
     score = wScore + fScore + hScore + synergy + rScore + tScore - penalty
     return score
 
-def evaluate(region, buildList, rscrList):
+def evaluate(region, buildList, rscrList, stage = 0):
     region = [int(x) for x in region]
     settlementsArr = [region[:5], region[5:8],region[8:11]]
     fertility = region[11]
@@ -213,7 +223,7 @@ def evaluate(region, buildList, rscrList):
         "religion": regReligion
     }
 
-    return scoreRegion(regionData, violations), {
+    return scoreRegion(regionData, violations, stage), {
         "settlement_sanitation": locSan,
         "region": {
             "food": regFood,
@@ -224,6 +234,8 @@ def evaluate(region, buildList, rscrList):
             "religion": regReligion
         }
     }
+#buildingList = buildLoader()
+#resourceList = rsrcLoader()
 #[0-4] City buildings, [5-7] Town 1 buildings, [8-10] Town 2 buildings, [11] Fertility, [12-14] Coastal Bools, [15-17] Has Resource Bool, [18-20] Resource IDs
 # Example regArray = [12, 3, 9, 5, 6, 19, 20, 21, 22, 24, 19, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 #regArray = [1, 3, 12, 6, 17, 19, 23, 24, 20, 21, 22, 3, 0, 0, 0, 1, 0, 0, 3, 0, 0]

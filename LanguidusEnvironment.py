@@ -14,6 +14,7 @@ class LanguidusEnv(gym.Env):
         self.regionContext = None #Fertility, coastline & resources
         self.slots = [0] * 11 #The funny input vector array
         self.currentStats = None
+        self.stage = 0
 
         self.observation_space = gym.spaces.Box(
             low=-np.inf, high=np.inf, shape=(27,), dtype=np.float32
@@ -54,7 +55,7 @@ class LanguidusEnv(gym.Env):
         slotIdx = action // 27
         buildingId = action % 27
         self.slots[slotIdx] = buildingId
-        reward, details = evaluate(self.buildRegion(), buildingList, resourceList)
+        reward, details = evaluate(self.buildRegion(), buildingList, resourceList, self.stage)
         self.currentStats = details
         done = all(s != 0 for s in self.slots)
         obs = self.getObs()
@@ -79,9 +80,11 @@ class LanguidusEnv(gym.Env):
 
         slots = regArray[0:11]
         coast = regArray[12:15]
+        hasResource = regArray[15:18]
         resources = regArray[18:21]
 
         slotGroups = [(0, 5, "city"), (5, 8, "town"), (8, 11, "town")]
+        Y_TIER_RESOURCES = ["gold", "iron", "grapes", "marble"]
 
         for sIdx, (start, end, sType) in enumerate(slotGroups):
             #Grab all preexisting buildings from settlement
@@ -104,7 +107,6 @@ class LanguidusEnv(gym.Env):
                 mask[slot, 0] = False
                 for b in buildingList:
                     bid = b["id"]
-                    reqs = b.get("requires", [])
                     #Is this type of building allowed in?
                     if sType not in b["valid_in"]:
                         mask[slot, bid] = False
@@ -114,14 +116,25 @@ class LanguidusEnv(gym.Env):
                         mask[slot, 15] = False
                         mask[slot, 16] = False
                     #Does the settlement know what a resource is?
-                    if not resources[sIdx]:
+                    if not hasResource[sIdx]:
                         mask[slot, 17] = False
                         mask[slot, 18] = False
+                    else:
+                        resourceName = resourceList[resources[sIdx]]["resource"]
+                        if resourceName not in Y_TIER_RESOURCES:
+                            mask[slot, 18] = False
                     #Is the building already there?
                     if b["name"] in excluded:
                         mask[slot, bid] = False
         return mask.flatten()
     
+    def setStage(self, stage):
+        self.stage = stage
+        print("I WAS HERE TOO")
+    
+    def getStage(self):
+        print("I WAS HERE")
+        return self.stage
 if __name__ == "__main__":
     testEnv = LanguidusEnv(buildingList, [[3, 1, 0, 0, 1, 0, 0, 3, 0, 0]])
     testEnv.regionContext = [3, 1, 0, 0, 1, 0, 0, 1, 0, 0]

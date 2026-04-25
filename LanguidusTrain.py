@@ -39,6 +39,10 @@ def train(hours):
     startTime = time.time()
     limit = hours*3600
     trainingRound = 1
+    levelUp1 = None
+    levelUp2 = None
+    passCombo = 0
+    REQUIRED_COMBO = 3
 
     while(time.time() - startTime < limit):
         print(f"Round {trainingRound}")
@@ -47,16 +51,45 @@ def train(hours):
         env.save("languidus_vecnormalize.pkl")
 
         if trainingRound % 1 == 0:
-            scores = [mockExam(ctx, model)[0] for ctx in valCtx[:500]]
-            valScores.append(np.mean(scores))
+            scores = [mockExam(ctx, model, env.venv.envs[0].env.stage)[0] for ctx in valCtx[:500]]
+            valMean = np.mean(scores)
+            valScores.append(valMean)
             valAt.append(trainingRound)
             print(f"Validation mean: {valScores[-1]:.0f}")
+
+            #TODO Make it check if it has run at least 10 rounds
+            if env.env_method("getStage") == 0:
+                if valMean > -500 and max(scores) >= 0:
+                    passCombo += 1
+                    print(f"{passCombo}/{REQUIRED_COMBO}")
+                    if passCombo >= REQUIRED_COMBO:
+                        env.env_method("setStage", 1)
+                        levelUp1=trainingRound
+                        passCombo = 0
+                        print("Level Up! 0 --> 1")
+                else:
+                    passCombo = 0
+                    
+            elif env.env_method("getStage")==1 and valMean > 8000:
+                passCombo += 1
+                print(f"{passCombo}/{REQUIRED_COMBO}")
+                if passCombo >= REQUIRED_COMBO:
+                    env.env_method("setStage", 2)
+                    levelUp2 = trainingRound
+                    print("Level Up! 1 --> 2")
+            else:
+                passCombo = 0
+                                      
         
         trainingRound += 1
-
-    plotRewards(callback.episodeRewards, valScores, valAt)
+    if levelUp2 is not None:
+        plotRewards(callback.episodeRewards, valScores, valAt, levelUp1, levelUp2)
+    elif levelUp1 is not None:
+        plotRewards(callback.episodeRewards, valScores, valAt, levelUp1)
+    else:
+        plotRewards(callback.episodeRewards, valScores, valAt)
     
-def plotRewards(rewards, valScores, valAt, window=100):
+def plotRewards(rewards, valScores, valAt, levelOne=None, levelTwo=None, window=100):
     rewards = np.array(rewards).flatten()
     epPerRound= 100000//11
     valAtEpisodes = [r * epPerRound for r in valAt]
@@ -70,6 +103,14 @@ def plotRewards(rewards, valScores, valAt, window=100):
     plt.plot(x, rollingMean, label="Training Mean")
     plt.plot(valAtEpisodes, valScores, "r-o", label="Validation Mean", linewidth=2)
     plt.fill_between(x, rollingMin, rollingMax, alpha=0.2, label= "Min/Max range")
+    if levelOne is not None:
+        levelOne = levelOne*epPerRound
+        plt.axvline(levelOne, color="green", linewidth=1.5, linestyle="--")
+        plt.text(levelOne, plt.ylim()[1] * 0.95, "Level 1", color="green", fontsize=9)
+    if levelTwo is not None:
+        levelTwo = levelTwo*epPerRound
+        plt.axvline(levelTwo, color="magenta", linewidth=1.5, linestyle="--")
+        plt.text(levelTwo, plt.ylim()[1] * 0.95, "Level 2", color="magenta", fontsize=9)
     plt.grid()
     plt.ylim((-5e3, 25e3))
     plt.xlabel("Episode")
@@ -79,4 +120,4 @@ def plotRewards(rewards, valScores, valAt, window=100):
     plt.savefig("training_progress.png")
     plt.show()
 
-train(8)
+train(0.1)

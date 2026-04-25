@@ -15,7 +15,7 @@ context = regionLoader()
 
 _, valCtx, _ = contextSplitter(context)
 
-def mockExam(context, model):
+def mockExam(context, model, stage = 2):
     innerEnv = LanguidusEnv(buildingList, [context])
     innerEnv.regionContext = context
     innerEnv.slots = [0]*11
@@ -30,7 +30,7 @@ def mockExam(context, model):
             break
     
     regArray = innerEnv.buildRegion()
-    score, details = evaluate(regArray, buildingList, rsrcList)
+    score, details = evaluate(regArray, buildingList, rsrcList, stage)
 
     return score, details, innerEnv.slots
 
