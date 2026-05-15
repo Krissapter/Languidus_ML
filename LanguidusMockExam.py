@@ -5,7 +5,7 @@ from sb3_contrib.common.wrappers import ActionMasker
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from LanguidusEnvironment import LanguidusEnv
 from LanguidusEvaluation import evaluate, getBuilding
-from Toolbox import buildLoader, rsrcLoader, regionLoader, contextSplitter, parseContext
+from Toolbox import NUM_SLOTS, SLOT_GROUPS, buildLoader, rsrcLoader, regionLoader, contextSplitter, parseContext
 
 
 
@@ -16,13 +16,13 @@ context = regionLoader()
 _, valCtx, _ = contextSplitter(context)
 
 def mockExam(context, model, stage = 2):
-    innerEnv = LanguidusEnv(buildingList, [context])
+    innerEnv = LanguidusEnv(buildingList, rsrcList, [context])
     innerEnv.regionContext = context
-    innerEnv.slots = [0]*11
+    innerEnv.slots = [0]*NUM_SLOTS
     innerEnv.currentStats = None
     obs = innerEnv.getObs()
 
-    for _ in range(11):
+    for _ in range(NUM_SLOTS):
         mask = innerEnv.getActionMask()
         action, _ = model.predict(obs,action_masks=mask, deterministic=True)
         obs, _, done, _, _ = innerEnv.step(action)
@@ -41,13 +41,11 @@ def printGrade(slots, details, context, i, score):
     r = details["region"]
     san = details["settlement_sanitation"]
 
-    slotGroups = [(0,5, "city"), (5, 8, "town"), (8, 11, "town")]
-
     print(f"\n{'='*50}")
     print(f"TEST REGION {i+1}")
     print(f"  Fertility: {ctx['fertility']}  Coast: {coast}  Resources: {resources}")
     print(f"\n  Buildings:")
-    for sIdx, (start, end, sType) in enumerate(slotGroups):
+    for sIdx, (start, end, sType) in enumerate(SLOT_GROUPS):
         names = [
             getBuilding(buildingList, rsrcList, slots[j], resources[sIdx], coast[sIdx])["name"]
             for j in range(start, end)
@@ -86,7 +84,7 @@ def plotGrades(scores):
     print(f"Max:   {max(scores)}")
 
 if __name__ == "__main__":
-    env = LanguidusEnv(buildingList, valCtx)
+    env = LanguidusEnv(buildingList, rsrcList, valCtx)
     env = ActionMasker(env, lambda e: e.getActionMask())
     env = DummyVecEnv([lambda: env])
     env = VecNormalize.load("languidus_vecnormalize.pkl", env)

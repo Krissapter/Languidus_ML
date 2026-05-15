@@ -1,5 +1,14 @@
 import json
 from sklearn.model_selection import train_test_split
+NUM_SLOTS = 11
+NUM_BUILDING_ID = 27
+CONTEXT_START = 11
+CONTEXT_END = 21
+SLOT_GROUPS = [
+    (0, 5, "city"),
+    (5, 8, "town"),
+    (8, 11, "town")
+]
 
 def buildLoader():
     with open("Buildings_ERE.JSON") as b:

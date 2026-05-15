@@ -79,18 +79,17 @@ def evaluateSettlement(buildList, rscrList, settlementType, buildingIds, fertili
 #Check if region is within soft constraints 
 def checkConstraint(regionData):
     violations = [0]*5
-    sanitation = regionData["sanitation"]
+    SANITATION_MINIMUM = 2
+    HAPPINESS_MINIMUM = 15
 
     #Severity based
     j = 0
     if regionData["food"] < 0:
         violations[0]=regionData["food"]*-1
-    if regionData["happiness"] < 15:
-        violations[1]= 15-regionData["happiness"]
-    for i in sanitation:
-        if i < 2:
-            violations[2+j]= -i
-        j += 1
+    if regionData["happiness"] < HAPPINESS_MINIMUM:
+        violations[1]= HAPPINESS_MINIMUM-regionData["happiness"]
+    for j, sanitation in enumerate( regionData["sanitation"]):
+        violations[2+j] = max(0, SANITATION_MINIMUM - sanitation)
     return violations
    
     #Infraction based (High penalty modifier (10000))
@@ -134,7 +133,6 @@ def scoreRegion(data, violations, stage):
     else:
         fScore = 0
 
-    
     if happy > 15 and happy <= 20:
         hScore = happy*happyParam[stage]
     elif happy > 20:

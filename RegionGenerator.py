@@ -21,4 +21,5 @@ def generateRegion():
             json.dump(arr, f)
             first = False
         f.write("\n]")
-generateRegion()
+if __name__ == "__main__":
+    generateRegion()

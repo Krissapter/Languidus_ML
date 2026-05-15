@@ -7,13 +7,15 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from LanguidusEnvironment import LanguidusEnv
 from LanguidusMockExam import mockExam
-from Toolbox import buildLoader, regionLoader, contextSplitter
+from Toolbox import buildLoader, rsrcLoader, regionLoader, contextSplitter
+
 buildingList = buildLoader()
+resources = rsrcLoader()
 contexts = regionLoader()
 
 trainCtx, valCtx, testCtx = contextSplitter(contexts)
 
-env = LanguidusEnv(buildingList, trainCtx)
+env = LanguidusEnv(buildingList, resources, trainCtx)
 env = ActionMasker(env, lambda e: e.getActionMask())
 env = DummyVecEnv([lambda: env])
 env = VecNormalize(env, norm_obs=False, norm_reward=True, clip_reward=10.0)
@@ -51,30 +53,30 @@ def train(hours):
         env.save("languidus_vecnormalize.pkl")
 
         if trainingRound % 1 == 0:
-            scores = [mockExam(ctx, model, env.venv.envs[0].env.stage)[0] for ctx in valCtx[:500]]
+            stage = env.get_attr("stage")
+            scores = [mockExam(ctx, model, stage)[0] for ctx in valCtx[:500]]
             valMean = np.mean(scores)
             valScores.append(valMean)
             valAt.append(trainingRound)
             print(f"Validation mean: {valScores[-1]:.0f}")
-
-            #TODO Make it check if it has run at least 10 rounds
-            if env.env_method("getStage") == 0:
+            
+            if stage == 0:
                 if valMean > -500 and max(scores) >= 0:
                     passCombo += 1
                     print(f"{passCombo}/{REQUIRED_COMBO}")
                     if passCombo >= REQUIRED_COMBO:
-                        env.env_method("setStage", 1)
+                        env.set_attr("stage", 1)
                         levelUp1=trainingRound
                         passCombo = 0
                         print("Level Up! 0 --> 1")
                 else:
                     passCombo = 0
                     
-            elif env.env_method("getStage")==1 and valMean > 8000:
+            elif stage == 1 and valMean > 8000:
                 passCombo += 1
                 print(f"{passCombo}/{REQUIRED_COMBO}")
                 if passCombo >= REQUIRED_COMBO:
-                    env.env_method("setStage", 2)
+                    env.set_attr("stage", 2)
                     levelUp2 = trainingRound
                     print("Level Up! 1 --> 2")
             else:
@@ -119,5 +121,5 @@ def plotRewards(rewards, valScores, valAt, levelOne=None, levelTwo=None, window=
     plt.legend()
     plt.savefig("training_progress.png")
     plt.show()
-
-train(0.1)
+if __name__ == "__main__":
+    train(0.1)
