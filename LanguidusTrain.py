@@ -53,7 +53,7 @@ def train(hours):
         env.save("languidus_vecnormalize.pkl")
 
         if trainingRound % 1 == 0:
-            stage = env.get_attr("stage")
+            stage = env.get_attr("stage")[0]
             scores = [mockExam(ctx, model, stage)[0] for ctx in valCtx[:500]]
             valMean = np.mean(scores)
             valScores.append(valMean)
@@ -121,5 +121,6 @@ def plotRewards(rewards, valScores, valAt, levelOne=None, levelTwo=None, window=
     plt.legend()
     plt.savefig("training_progress.png")
     plt.show()
+
 if __name__ == "__main__":
-    train(0.1)
+    train(1)
