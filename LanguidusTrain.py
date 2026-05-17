@@ -61,7 +61,7 @@ def train(hours):
             print(f"Validation mean: {valScores[-1]:.0f}")
             
             if stage == 0:
-                if valMean > -500 and max(scores) >= 0:
+                if valMean > -300 and max(scores) >= 0:
                     passCombo += 1
                     print(f"{passCombo}/{REQUIRED_COMBO}")
                     if passCombo >= REQUIRED_COMBO:
@@ -72,7 +72,8 @@ def train(hours):
                 else:
                     passCombo = 0
                     
-            elif stage == 1 and valMean > 8000:
+            #TODO: score≥0.8×best possible score for available resources
+            elif stage == 1 and valMean > 2500:
                 passCombo += 1
                 print(f"{passCombo}/{REQUIRED_COMBO}")
                 if passCombo >= REQUIRED_COMBO:

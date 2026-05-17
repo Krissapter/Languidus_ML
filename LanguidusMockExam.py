@@ -95,7 +95,7 @@ if __name__ == "__main__":
     
     scores = []
     for i, ctx in enumerate(valCtx):
-        score, details, slots = mockExam(ctx, modelDef)
+        score, details, slots = mockExam(ctx, modelDef, 1)
         printGrade(slots, details, ctx, i, score)
         scores.append(score)
     plotGrades(scores)

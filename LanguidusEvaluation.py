@@ -111,16 +111,16 @@ def scoreRegion(data, violations, stage):
     #Stage 0: Only stick, no carrot
     #Stage 1: Import HUGE carrots from abroad
     #Stage 2: Grow normal sized carrots at home
-    foodParam = [0, 0, 200]
-    happyParam = [0, 0, 50]
-    religionParam = [0, 0, 100]
-    relAdjParam = [0, 0, 50]
+    foodParam = [0, 20, 200]
+    happyParam = [0, 5, 50]
+    religionParam = [0, 10, 100]
+    relAdjParam = [0, 5, 50]
     synParam = 2
     tradeParam = [0, 1, 1]
     foodPenaltyParam = [5, 10, 15]
     happyPenaltyParam = [8, 15, 25]
     sanPenaltyParam = [5, 10, 14]
-    wealthParam = [0, 0, 1]
+    wealthParam = [0, 0.1, 1]
 
     food = data["food"]
     happy = data["happiness"]
